@@ -1,0 +1,65 @@
+@define-color sticky_yellow #FFE66D;
+@define-color sticky_shadow rgba(0, 0, 0, 0.2);
+@define-color block_bg rgba(255, 255, 255, 0.15);
+@define-color block_hover rgba(255, 255, 255, 0.25);
+
+.sticky-note {
+    background-color: @sticky_yellow;
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+headerbar {
+    background: transparent;
+    border: none;
+    padding: 4px;
+}
+
+headerbar button {
+    border-radius: 50%;
+    min-width: 32px;
+    min-height: 32px;
+    opacity: 0.6;
+}
+
+headerbar button:hover {
+    opacity: 1.0;
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.text-block {
+    background-color: @block_bg;
+    border-radius: 8px;
+    padding: 8px;
+    margin: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.text-block:hover {
+    background-color: @block_hover;
+}
+
+textview {
+    background: transparent;
+}
+
+textview text {
+    background: transparent;
+    color: rgba(0, 0, 0, 0.85);
+    font-size: 14px;
+}
+
+.delete-btn {
+    opacity: 0;
+    background: rgba(255, 0, 0, 0.1);
+    color: #d20f39;
+    border-radius: 50%;
+}
+
+.text-block:hover .delete-btn {
+    opacity: 1;
+}
+
+.delete-btn:hover {
+    background: rgba(255, 0, 0, 0.2);
+}
