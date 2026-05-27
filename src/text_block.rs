@@ -29,6 +29,14 @@ mod imp {
 
     impl Default for TextBlockWidget {
         fn default() -> Self {
+            let buffer = gtk::TextBuffer::new(None);
+            buffer.set_enable_undo(true);
+            let text_view = gtk::TextView::builder()
+                .wrap_mode(gtk::WrapMode::Word)
+                .accepts_tab(false)
+                .buffer(&buffer)
+                .build();
+                
             Self {
                 data: RefCell::new(TextBlock {
                     id: 0,
@@ -39,10 +47,7 @@ mod imp {
                     height: 100.0,
                     content: String::new(),
                 }),
-                text_view: gtk::TextView::builder()
-                    .wrap_mode(gtk::WrapMode::Word)
-                    .accepts_tab(false)
-                    .build(),
+                text_view,
             }
         }
     }
@@ -110,7 +115,69 @@ mod imp {
             buffer.connect_changed(glib::clone!(#[weak] obj, move |_| {
                 obj.imp().save_data();
             }));
-            
+
+            // Keyboard shortcuts and math evaluation
+            let key_controller = gtk::EventControllerKey::new();
+            let obj_weak = obj.downgrade();
+            key_controller.connect_key_pressed(move |_, key, _keycode, state| {
+                let Some(obj) = obj_weak.upgrade() else { return glib::Propagation::Proceed; };
+                let text_view = &obj.imp().text_view;
+                let buffer = text_view.buffer();
+
+                // Markdown wrapping shortcuts
+                if state.contains(gdk::ModifierType::CONTROL_MASK) {
+                    match key {
+                        gdk::Key::b | gdk::Key::B => {
+                            wrap_selection(&buffer, "**", "**");
+                            return glib::Propagation::Stop;
+                        }
+                        gdk::Key::i | gdk::Key::I => {
+                            wrap_selection(&buffer, "*", "*");
+                            return glib::Propagation::Stop;
+                        }
+                        gdk::Key::u | gdk::Key::U => {
+                            wrap_selection(&buffer, "<u>", "</u>");
+                            return glib::Propagation::Stop;
+                        }
+                        gdk::Key::h | gdk::Key::H => {
+                            wrap_selection(&buffer, "<mark>", "</mark>");
+                            return glib::Propagation::Stop;
+                        }
+                        _ => {}
+                    }
+                }
+
+                // Inline math calculator
+                if key == gdk::Key::equal {
+                    let mut insert_iter = buffer.iter_at_mark(&buffer.get_insert());
+                    let mut start_iter = insert_iter.clone();
+                    
+                    // Find the start of the expression (space or newline)
+                    while start_iter.backward_char() {
+                        let c = start_iter.char();
+                        if c.is_whitespace() || c == '\n' {
+                            start_iter.forward_char();
+                            break;
+                        }
+                    }
+
+                    let expr_text = buffer.text(&start_iter, &insert_iter, false).to_string();
+                    if !expr_text.trim().is_empty() {
+                        if let Ok(result) = evalexpr::eval(&expr_text) {
+                            let result_str = result.to_string();
+                            buffer.begin_user_action();
+                            buffer.delete(&mut start_iter, &mut insert_iter);
+                            buffer.insert(&mut start_iter, &result_str);
+                            buffer.end_user_action();
+                            return glib::Propagation::Stop;
+                        }
+                    }
+                }
+
+                glib::Propagation::Proceed
+            });
+            self.text_view.add_controller(key_controller);
+
             // Initial styling is now handled by style.css
         }
 
@@ -119,6 +186,22 @@ mod imp {
                 child.unparent();
             }
         }
+    }
+
+    fn wrap_selection(buffer: &gtk::TextBuffer, prefix: &str, suffix: &str) {
+        buffer.begin_user_action();
+        if let Some((mut start, mut end)) = buffer.selection_bounds() {
+            let text = buffer.text(&start, &end, false);
+            buffer.delete(&mut start, &mut end);
+            buffer.insert(&mut start, &format!("{}{}{}", prefix, text, suffix));
+        } else {
+            let mut iter = buffer.iter_at_mark(&buffer.get_insert());
+            buffer.insert(&mut iter, &format!("{}{}", prefix, suffix));
+            let new_offset = iter.offset() - suffix.chars().count() as i32;
+            let new_iter = buffer.iter_at_offset(new_offset);
+            buffer.place_cursor(&new_iter);
+        }
+        buffer.end_user_action();
     }
 
     impl WidgetImpl for TextBlockWidget {}
