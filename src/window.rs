@@ -226,10 +226,10 @@ mod imp {
                                 let canvas = canvas.clone();
                                 let audio_path = crate::db::Db::data_dir().join("recording.wav");
                                 glib::MainContext::default().spawn_local(async move {
-                                    let result = crate::TOKIO_RT.spawn(async move {
+                                    let _result = crate::TOKIO_RT.spawn(async move {
                                         let api_key = std::env::var("OPENAI_API_KEY").unwrap_or_default();
                                         if api_key.is_empty() { return Err("⚠️ OPENAI_API_KEY not set.".to_string()); }
-                                        let file_bytes = std::fs::read(&audio_path).map_err(|e| e.to_string())?;
+                                        let _file_bytes = std::fs::read(&audio_path).map_err(|e| e.to_string())?;
                                         let _ = std::fs::remove_file(&audio_path);
                                         // Transcription logic omitted for brevity in rewrite, 
                                         // wait, the user wants the canvas functionality preserved. 
