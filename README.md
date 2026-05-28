@@ -67,60 +67,63 @@ sudo pacman -S gtk4 libadwaita sqlite speech-dispatcher alsa-utils
 
 ## 📦 Installation
 
-### Linux — `.deb` Installer (Recommended)
+**STOP: Do NOT use GitHub Packages (npm, Docker, etc.) for this app!**
+This is a native desktop application. You must download and install the provided binaries (`.deb` for Linux, `.msi` for Windows) directly from the **GitHub Releases** page.
 
-A proper Debian package (`.deb`) is provided. This installs the binary system-wide, adds a desktop entry to your app launcher, and auto-resolves all dependencies.
+### 🐧 Linux (Debian / Ubuntu) — The Easy Way
+1. Go to the **Releases** page on the right side of this GitHub repository.
+2. Download the `sticky_X.X.X_amd64.deb` file.
+3. Double-click the file in your file manager to install it via your Software Center, OR run:
+   ```bash
+   sudo dpkg -i sticky_*.deb
+   ```
+4. Open your app launcher, search for **Sticky**, and launch it!
 
-**Build the `.deb`:**
+*(To uninstall, simply run `sudo apt remove sticky`)*
+
+### 🪟 Windows — The Easy Way
+1. Go to the **Releases** page on the right side of this GitHub repository.
+2. Download the `sticky-X.X.X.msi` installer.
+3. Double-click it to run the installer wizard.
+4. You will now have a Sticky icon in your Start Menu and on your Desktop!
+
+---
+
+## 🛠️ For Developers: How to build from source & publish releases
+
+If you want to compile this app yourself or upload a new release to GitHub, follow these exact steps:
+
+### 1. Building the `.deb` file on Linux
 ```bash
-cargo install cargo-deb   # one-time setup
+# 1. Install cargo-deb (one-time setup)
+cargo install cargo-deb
+
+# 2. Build the package
 cargo deb
+
+# The resulting file will be exactly here:
+# target/debian/sticky_0.1.0-1_amd64.deb
 ```
 
-**Install it:**
-```bash
-sudo dpkg -i target/debian/sticky_0.1.0-1_amd64.deb
-```
-
-Or simply double-click the `.deb` file in your file manager — it will open in your Software Center / GDebi, just like installing any other app.
-
-**Uninstall:**
-```bash
-sudo apt remove sticky
-```
-
-### Linux — Quick Install Script
-
-If you prefer a user-local install (no `sudo` required):
-```bash
-./install.sh
-```
-This builds the release binary, copies it to `~/.local/bin/sticky`, and creates a `.desktop` entry in your app launcher.
-
-### Windows — `.msi` Installer
-
-A WiX manifest is included to generate a proper Windows `.msi` installer with Start Menu and Desktop shortcuts.
-
-**Prerequisites:**
-- [Rust](https://rustup.rs/) toolchain for Windows
-- [WiX Toolset v3](https://wixtoolset.org/) installed and on your PATH
-- GTK4 runtime libraries for Windows (via [gvsbuild](https://github.com/wingtk/gvsbuild) or [MSYS2](https://www.msys2.org/))
-
-**Build the `.msi`:**
+### 2. Building the `.msi` file on Windows
+*Requires [Rust](https://rustup.rs/) and [WiX Toolset v3](https://wixtoolset.org/) installed.*
 ```powershell
-cargo install cargo-wix   # one-time setup
+# 1. Install cargo-wix (one-time setup)
+cargo install cargo-wix
+
+# 2. Build the installer
 cargo wix
+
+# The resulting file will be exactly here:
+# target\wix\sticky-0.1.0-x86_64.msi
 ```
 
-The installer will be output to `target/wix/sticky-0.1.0-x86_64.msi`. Double-click it to install like any Windows application.
-
-### Windows — Quick Install Script
-
-For a lightweight install without WiX:
-```powershell
-.\install.ps1
-```
-This builds the release binary, copies it to `%LOCALAPPDATA%\Programs\Sticky`, and creates a Desktop shortcut.
+### 3. Publishing to GitHub Releases (For Maintainers)
+1. Go to your repository on GitHub.
+2. Click **Releases** on the right sidebar -> **Draft a new release**.
+3. Create a tag (e.g. `v0.1.0`).
+4. **CRITICAL STEP:** Drag and drop the built `.deb` and `.msi` files into the box at the bottom that says *"Attach binaries by dropping them here"*.
+5. Click **Publish**. Do **not** use GitHub Packages.
 
 ---
 
