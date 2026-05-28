@@ -145,27 +145,30 @@ sudo pacman -S gtk4 libadwaita sqlite speech-dispatcher alsa-utils
 
 ### Linux — `.deb` package
 
-Download the `.deb` file from the [latest release](https://github.com/Mrudula-itsjuzme/Sticky/releases/latest), then install it:
+Get the latest version of Sticky for your operating system from our **[Releases Page](https://github.com/mrudula-itsjuzme/Sticky/releases)**.
 
-```bash
-sudo dpkg -i sticky_*.deb
-sudo apt install -f
-```
+### 🐧 Linux (Debian / Ubuntu)
+1. Download the latest `sticky_X.X.X_amd64.deb` file.
+2. Double-click the downloaded file to install it via your Software Center, or install via terminal:
+   ```bash
+   sudo dpkg -i sticky_*.deb
+   ```
+3. Launch **Sticky** from your application menu!
 
-Uninstall:
+*(To uninstall, simply run `sudo apt remove sticky`)*
 
-```bash
-sudo apt remove sticky
-```
+### 🪟 Windows
+1. Download the latest `sticky-X.X.X.msi` installer.
+2. Double-click the installer to run the setup wizard.
+3. Launch **Sticky** from your Start Menu or Desktop shortcut!
 
-### Windows — `.msi` installer
+---
 
-Download the `.msi` installer from the [latest release](https://github.com/Mrudula-itsjuzme/Sticky/releases/latest), then run the installer wizard.
+## 🛠️ For Developers: Building from Source
 
-### Build from source
+If you want to compile this app yourself or contribute to the project, follow these steps:
 
-Build the Debian package on Linux:
-
+### 1. Building the `.deb` file on Linux
 ```bash
 cargo install cargo-deb
 cargo deb
