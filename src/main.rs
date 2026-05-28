@@ -1,21 +1,20 @@
-mod db;
-mod window;
 mod canvas;
-mod text_block;
+mod db;
 mod portals;
+mod text_block;
+mod window;
 
 use adw::prelude::*;
 use adw::subclass::prelude::ObjectSubclassIsExt;
-use adw::Application;
+
 use db::Db;
 use gtk::{gdk, gio};
-use std::sync::{Arc, Mutex, mpsc};
 use once_cell::sync::Lazy;
+use std::sync::{mpsc, Arc, Mutex};
 
 pub static DB: Lazy<Mutex<Option<Arc<Db>>>> = Lazy::new(|| Mutex::new(None));
-pub static TOKIO_RT: Lazy<tokio::runtime::Runtime> = Lazy::new(|| {
-    tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime")
-});
+pub static TOKIO_RT: Lazy<tokio::runtime::Runtime> =
+    Lazy::new(|| tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime"));
 
 fn main() -> glib::ExitCode {
     env_logger::init();
@@ -51,7 +50,10 @@ fn main() -> glib::ExitCode {
 
             // Try background portal (silently ignore errors for unsandboxed apps)
             if let Err(e) = portals::request_background().await {
-                log::info!("Background portal unavailable (expected outside Flatpak): {}", e);
+                log::info!(
+                    "Background portal unavailable (expected outside Flatpak): {}",
+                    e
+                );
             }
         });
 
@@ -67,7 +69,7 @@ fn main() -> glib::ExitCode {
                 .decorated(false)
                 .modal(true)
                 .build();
-            
+
             search_win.add_css_class("search-window");
 
             let overlay = gtk::Overlay::new();
@@ -79,21 +81,21 @@ fn main() -> glib::ExitCode {
                 .margin_start(12)
                 .margin_end(12)
                 .build();
-            
+
             let list_box = gtk::ListBox::builder()
                 .selection_mode(gtk::SelectionMode::None)
                 .css_classes(["search-results"])
                 .build();
-                
+
             let popover = gtk::Popover::builder()
                 .position(gtk::PositionType::Bottom)
                 .child(&list_box)
                 .autohide(false)
                 .has_arrow(false)
                 .build();
-            
+
             popover.set_parent(&entry);
-                
+
             let app_clone_for_entry = app_clone_search.clone();
             let search_win_clone = search_win.clone();
             entry.connect_search_changed(move |ent| {
@@ -101,7 +103,7 @@ fn main() -> glib::ExitCode {
                 while let Some(child) = list_box.first_child() {
                     list_box.remove(&child);
                 }
-                
+
                 if query.len() > 1 {
                     if let Some(db) = DB.lock().unwrap().as_ref() {
                         if let Ok(blocks) = db.search_blocks(&query) {
@@ -109,23 +111,36 @@ fn main() -> glib::ExitCode {
                                 popover.popdown();
                             } else {
                                 for block in blocks.into_iter().take(5) {
-                                    let btn = gtk::Button::with_label(&format!("Note #{}: {}", block.note_id, block.content.chars().take(40).collect::<String>()));
+                                    let btn = gtk::Button::with_label(&format!(
+                                        "Note #{}: {}",
+                                        block.note_id,
+                                        block.content.chars().take(40).collect::<String>()
+                                    ));
                                     let app_ref = app_clone_for_entry.clone();
                                     let win_ref = search_win_clone.clone();
                                     btn.connect_clicked(move |_| {
                                         win_ref.close();
                                         // Focus the matching note window
                                         for w in app_ref.windows() {
-                                            if let Some(sticky) = w.downcast_ref::<crate::window::StickyWindow>() {
-                                                if let Some(n) = sticky.imp().note.borrow().as_ref() {
+                                            if let Some(sticky) =
+                                                w.downcast_ref::<crate::window::StickyWindow>()
+                                            {
+                                                if let Some(n) = sticky.imp().note.borrow().as_ref()
+                                                {
                                                     if n.id == block.note_id {
                                                         sticky.present();
                                                         sticky.add_css_class("highlight");
                                                         glib::timeout_add_local_once(
                                                             std::time::Duration::from_millis(1500),
-                                                            glib::clone!(#[weak] sticky, move || {
-                                                                sticky.remove_css_class("highlight");
-                                                            })
+                                                            glib::clone!(
+                                                                #[weak]
+                                                                sticky,
+                                                                move || {
+                                                                    sticky.remove_css_class(
+                                                                        "highlight",
+                                                                    );
+                                                                }
+                                                            ),
                                                         );
                                                     }
                                                 }
@@ -142,7 +157,7 @@ fn main() -> glib::ExitCode {
                     popover.popdown();
                 }
             });
-            
+
             overlay.set_child(Some(&entry));
             search_win.set_content(Some(&overlay));
             search_win.present();
@@ -150,7 +165,6 @@ fn main() -> glib::ExitCode {
         });
         app.add_action(&search_action);
         app.set_accels_for_action("app.search", &["<Control><Shift>f"]);
-
     });
 
     app.connect_activate(|app| {
@@ -162,7 +176,7 @@ fn main() -> glib::ExitCode {
                     println!("No notes found, creating a default one...");
                     let _ = db_arc.create_note(100, 100, "#FFE66D");
                 }
-                
+
                 for note in db_arc.get_notes().unwrap_or_default() {
                     println!("Creating window for note ID: {}", note.id);
                     let window = window::StickyWindow::new(app, note);
@@ -188,21 +202,55 @@ fn main() -> glib::ExitCode {
                 while let Ok(cmd) = rx.try_recv() {
                     match cmd {
                         "new-note" => portals::create_new_note(&app_for_tray),
-                        "search"   => app_for_tray.activate_action("search", None),
-                        "restore"  => {
+                        "search" => app_for_tray.activate_action("search", None),
+                        "restore" => {
                             if let Some(db) = DB.lock().unwrap().as_ref() {
                                 if let Ok(Some(note)) = db.restore_last_deleted_note() {
-                                    let window = crate::window::StickyWindow::new(&app_for_tray, note);
+                                    let window =
+                                        crate::window::StickyWindow::new(&app_for_tray, note);
                                     window.present();
                                 }
                             }
-                        },
-                        "empty"    => {
+                        }
+                        "empty" => {
                             if let Some(db) = DB.lock().unwrap().as_ref() {
                                 let _ = db.empty_trash();
                             }
-                        },
-                        "quit"     => app_for_tray.quit(),
+                        }
+                        "export-backup" => {
+                            let dialog = gtk::FileDialog::builder()
+                                .title("Export Database Backup")
+                                .initial_name("sticky_backup.db")
+                                .build();
+                            dialog.save(gtk::Window::NONE, gio::Cancellable::NONE, move |res| {
+                                if let Ok(file) = res {
+                                    if let Some(dest_path) = file.path() {
+                                        let mut src_path = glib::user_data_dir();
+                                        src_path.push("sticky");
+                                        src_path.push("notes.db");
+                                        let _ = std::fs::copy(&src_path, &dest_path);
+                                    }
+                                }
+                            });
+                        }
+                        "import-backup" => {
+                            let dialog = gtk::FileDialog::builder()
+                                .title("Import Database Backup")
+                                .build();
+                            dialog.open(gtk::Window::NONE, gio::Cancellable::NONE, move |res| {
+                                if let Ok(file) = res {
+                                    if let Some(src_path) = file.path() {
+                                        let mut dest_path = glib::user_data_dir();
+                                        dest_path.push("sticky");
+                                        dest_path.push("notes.db");
+                                        let _ = std::fs::copy(&src_path, &dest_path);
+                                        // Tell user to restart (we'll just log for now)
+                                        log::info!("Backup imported. Restart Sticky to apply.");
+                                    }
+                                }
+                            });
+                        }
+                        "quit" => app_for_tray.quit(),
                         _ => {}
                     }
                 }
@@ -211,11 +259,19 @@ fn main() -> glib::ExitCode {
         });
 
         std::thread::spawn(move || {
-            struct AntitgravTray { tx: mpsc::Sender<&'static str> }
+            struct AntitgravTray {
+                tx: mpsc::Sender<&'static str>,
+            }
             impl ksni::Tray for AntitgravTray {
-                fn id(&self) -> String { "sticky".into() }
-                fn title(&self) -> String { "Sticky Notes".into() }
-                fn icon_name(&self) -> String { "accessories-text-editor".into() }
+                fn id(&self) -> String {
+                    "sticky".into()
+                }
+                fn title(&self) -> String {
+                    "Sticky Notes".into()
+                }
+                fn icon_name(&self) -> String {
+                    "accessories-text-editor".into()
+                }
                 fn menu(&self) -> Vec<ksni::MenuItem<Self>> {
                     use ksni::menu::*;
                     vec![
@@ -225,14 +281,16 @@ fn main() -> glib::ExitCode {
                                 let _ = this.tx.send("new-note");
                             }),
                             ..Default::default()
-                        }.into(),
+                        }
+                        .into(),
                         StandardItem {
                             label: "🔍 Search Notes".into(),
                             activate: Box::new(|this: &mut AntitgravTray| {
                                 let _ = this.tx.send("search");
                             }),
                             ..Default::default()
-                        }.into(),
+                        }
+                        .into(),
                         MenuItem::Separator,
                         StandardItem {
                             label: "♻️ Restore Last Deleted".into(),
@@ -240,14 +298,33 @@ fn main() -> glib::ExitCode {
                                 let _ = this.tx.send("restore");
                             }),
                             ..Default::default()
-                        }.into(),
+                        }
+                        .into(),
                         StandardItem {
                             label: "🗑️ Empty Trash".into(),
                             activate: Box::new(|this: &mut AntitgravTray| {
                                 let _ = this.tx.send("empty");
                             }),
                             ..Default::default()
-                        }.into(),
+                        }
+                        .into(),
+                        MenuItem::Separator,
+                        StandardItem {
+                            label: "💾 Export Backup".into(),
+                            activate: Box::new(|this: &mut AntitgravTray| {
+                                let _ = this.tx.send("export-backup");
+                            }),
+                            ..Default::default()
+                        }
+                        .into(),
+                        StandardItem {
+                            label: "📂 Import Backup".into(),
+                            activate: Box::new(|this: &mut AntitgravTray| {
+                                let _ = this.tx.send("import-backup");
+                            }),
+                            ..Default::default()
+                        }
+                        .into(),
                         MenuItem::Separator,
                         StandardItem {
                             label: "Quit".into(),
@@ -255,13 +332,16 @@ fn main() -> glib::ExitCode {
                                 let _ = this.tx.send("quit");
                             }),
                             ..Default::default()
-                        }.into(),
+                        }
+                        .into(),
                     ]
                 }
             }
             let service = ksni::TrayService::new(AntitgravTray { tx: tray_tx });
             service.spawn();
-            loop { std::thread::sleep(std::time::Duration::from_secs(3600)); }
+            loop {
+                std::thread::sleep(std::time::Duration::from_secs(3600));
+            }
         });
     });
 

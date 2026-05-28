@@ -2,6 +2,15 @@
 
 Sticky is a powerful, modern GTK4-based desktop note-taking and whiteboard application written in Rust. It goes beyond simple sticky notes by providing an infinite whiteboard mode, Pomodoro timers, code snippets, file attachments, and AI-powered meeting summaries.
 
+![Sticky Notes Showcase](https://via.placeholder.com/800x450.png?text=Showcase+Screenshot+-+Sticky+Notes+on+Desktop)
+*(Note: Replace placeholder with an actual screenshot or GIF of the app running!)*
+
+## ⚠️ Status
+
+**Sticky is currently an experimental desktop productivity app.** Core sticky-note and whiteboard features are fully implemented and stable. AI meeting summaries require an OpenAI API key. 
+
+*Note: Some native desktop-window behaviors, such as edge peeking and magnetic snapping, rely on X11 semantics and may be limited on modern Wayland compositors without explicit extension support.*
+
 ## ✨ Features
 
 - **Floating Sticky Notes**: Borderless, resizable, and color-customizable notes that float on your desktop.

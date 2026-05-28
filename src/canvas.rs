@@ -1,9 +1,9 @@
+use crate::db::TextBlock;
+use crate::text_block::TextBlockWidget;
+use crate::DB;
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 use gtk::glib;
-use crate::text_block::TextBlockWidget;
-use crate::DB;
-use crate::db::TextBlock;
 
 glib::wrapper! {
     pub struct Canvas(ObjectSubclass<imp::Canvas>)
@@ -65,13 +65,15 @@ impl Canvas {
     pub fn get_all_text(&self) -> String {
         let mut text = String::new();
         let mut first = true;
-        
+
         let mut child = self.first_child();
         while let Some(widget) = child {
             if let Some(block) = widget.downcast_ref::<TextBlockWidget>() {
                 let content = block.get_content();
                 if !content.starts_with("[IMAGE]") {
-                    if !first { text.push_str("\n\n"); }
+                    if !first {
+                        text.push_str("\n\n");
+                    }
                     text.push_str(&content);
                     first = false;
                 }
@@ -123,21 +125,33 @@ mod imp {
             let click = gtk::GestureClick::new();
             obj.add_controller(click.clone());
 
-            click.connect_pressed(glib::clone!(#[weak] obj, move |_, n, x, y| {
-                if n == 2 { // Double click → create block
-                    obj.imp().create_block_at(x, y);
+            click.connect_pressed(glib::clone!(
+                #[weak]
+                obj,
+                move |_, n, x, y| {
+                    if n == 2 {
+                        // Double click → create block
+                        obj.imp().create_block_at(x, y);
+                    }
                 }
-            }));
-            
-            let drop_target = gtk::DropTarget::new(gtk::gio::File::static_type(), gtk::gdk::DragAction::COPY);
+            ));
+
+            let drop_target =
+                gtk::DropTarget::new(gtk::gio::File::static_type(), gtk::gdk::DragAction::COPY);
             let obj_weak = obj.downgrade();
             drop_target.connect_drop(move |_, value, x, y| {
-                let Some(obj) = obj_weak.upgrade() else { return false; };
+                let Some(obj) = obj_weak.upgrade() else {
+                    return false;
+                };
                 if let Ok(file) = value.get::<gtk::gio::File>() {
                     if let Some(path) = file.path() {
                         let path_str = path.display().to_string();
                         let lower = path_str.to_lowercase();
-                        if lower.ends_with(".png") || lower.ends_with(".jpg") || lower.ends_with(".jpeg") || lower.ends_with(".gif") {
+                        if lower.ends_with(".png")
+                            || lower.ends_with(".jpg")
+                            || lower.ends_with(".jpeg")
+                            || lower.ends_with(".gif")
+                        {
                             let content = format!("[IMAGE]{}", path_str);
                             obj.create_block_with_content(x, y, content);
                         } else {
@@ -163,7 +177,10 @@ mod imp {
                 let dot_r = 1.5f32;
 
                 let cr = snapshot.append_cairo(&gtk::graphene::Rect::new(
-                    0.0, 0.0, width as f32, height as f32,
+                    0.0,
+                    0.0,
+                    width as f32,
+                    height as f32,
                 ));
                 // Whiteboard white fill
                 cr.set_source_rgba(0.98, 0.98, 1.0, 1.0);
@@ -181,34 +198,43 @@ mod imp {
                     y += spacing;
                 }
             }
-            
+
             // Draw connecting links
             if let Some(db) = crate::DB.lock().unwrap().as_ref() {
                 if let Ok(links) = db.get_links_for_note(self.note_id.get()) {
                     let width = self.obj().width() as f64;
                     let height = self.obj().height() as f64;
                     let cr = snapshot.append_cairo(&gtk::graphene::Rect::new(
-                        0.0, 0.0, width as f32, height as f32,
+                        0.0,
+                        0.0,
+                        width as f32,
+                        height as f32,
                     ));
                     cr.set_source_rgba(0.2, 0.6, 1.0, 0.8);
                     cr.set_line_width(4.0);
-                    
+
                     for (src_id, tgt_id) in links {
                         let mut src_pt = None;
                         let mut tgt_pt = None;
-                        
+
                         let mut child = self.obj().first_child();
                         while let Some(widget) = child {
                             if let Some(block) = widget.downcast_ref::<TextBlockWidget>() {
                                 let id = block.imp().data.borrow().id;
-                                let x = block.imp().data.borrow().x + (block.imp().data.borrow().width / 2.0);
-                                let y = block.imp().data.borrow().y + (block.imp().data.borrow().height / 2.0);
-                                if id == src_id { src_pt = Some((x, y)); }
-                                if id == tgt_id { tgt_pt = Some((x, y)); }
+                                let x = block.imp().data.borrow().x
+                                    + (block.imp().data.borrow().width / 2.0);
+                                let y = block.imp().data.borrow().y
+                                    + (block.imp().data.borrow().height / 2.0);
+                                if id == src_id {
+                                    src_pt = Some((x, y));
+                                }
+                                if id == tgt_id {
+                                    tgt_pt = Some((x, y));
+                                }
                             }
                             child = widget.next_sibling();
                         }
-                        
+
                         if let (Some((sx, sy)), Some((tx, ty))) = (src_pt, tgt_pt) {
                             cr.move_to(sx, sy);
                             // Cubic bezier curve for beautiful organic mind-map links
@@ -218,7 +244,7 @@ mod imp {
                     }
                 }
             }
-            
+
             // Draw children on top
             self.parent_snapshot(snapshot);
         }
@@ -244,7 +270,7 @@ impl Canvas {
             height: 150.0,
             content,
         };
-        
+
         if let Some(db) = DB.lock().unwrap().as_ref() {
             if let Ok(id) = db.upsert_block(&data) {
                 let mut new_data = data;

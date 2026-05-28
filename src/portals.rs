@@ -1,9 +1,9 @@
-use ashpd::desktop::Color;
-use ashpd::desktop::background::Background;
-use adw::prelude::*;
-use gtk::gio;
-use crate::DB;
 use crate::window::StickyWindow;
+use crate::DB;
+use adw::prelude::*;
+use ashpd::desktop::background::Background;
+use ashpd::desktop::Color;
+use gtk::gio;
 
 pub async fn setup_shortcuts(app: &adw::Application) -> ashpd::Result<()> {
     let action = gio::SimpleAction::new("new-note", None);
@@ -13,7 +13,7 @@ pub async fn setup_shortcuts(app: &adw::Application) -> ashpd::Result<()> {
     });
     app.add_action(&action);
     app.set_accels_for_action("app.new-note", &["<Control>n"]);
-    
+
     Ok(())
 }
 
@@ -78,18 +78,16 @@ pub fn install_autostart() {
 }
 
 pub async fn pick_color() -> ashpd::Result<Option<String>> {
-    let color = Color::pick()
-        .send()
-        .await?
-        .response()?;
-    
+    let color = Color::pick().send().await?.response()?;
+
     // Convert RGB to HEX
-    let hex = format!("#{:02X}{:02X}{:02X}", 
+    let hex = format!(
+        "#{:02X}{:02X}{:02X}",
         (color.red() * 255.0) as u8,
         (color.green() * 255.0) as u8,
         (color.blue() * 255.0) as u8
     );
-    
+
     Ok(Some(hex))
 }
 

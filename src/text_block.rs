@@ -1,8 +1,8 @@
+use crate::db::TextBlock;
+use crate::DB;
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 use gtk::glib;
-use crate::db::TextBlock;
-use crate::DB;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -55,21 +55,21 @@ mod imp {
                 .accepts_tab(false)
                 .buffer(&buffer)
                 .build();
-                
-            let picture = gtk::Picture::builder()
-                .can_shrink(true)
-                .build();
-                
+
+            let picture = gtk::Picture::builder().can_shrink(true).build();
+
             let stack = gtk::Stack::new();
-            
+
             let checklist_box = gtk::Box::new(gtk::Orientation::Vertical, 4);
             checklist_box.add_css_class("checklist-box");
-            
+
             let file_box = gtk::Box::new(gtk::Orientation::Vertical, 4);
-            let file_btn = gtk::Button::builder().css_classes(["flat", "file-btn"]).build();
+            let file_btn = gtk::Button::builder()
+                .css_classes(["flat", "file-btn"])
+                .build();
             file_box.append(&file_btn);
             file_box.set_valign(gtk::Align::Center);
-            
+
             let timer_box = gtk::Box::new(gtk::Orientation::Vertical, 8);
             let timer_label = gtk::Label::builder()
                 .label("25:00")
@@ -79,7 +79,7 @@ mod imp {
             timer_box.append(&timer_label);
             timer_box.append(&timer_btn);
             timer_box.set_valign(gtk::Align::Center);
-            
+
             let code_buffer = gtk::TextBuffer::new(None);
             let code_view = gtk::TextView::builder()
                 .wrap_mode(gtk::WrapMode::None)
@@ -87,7 +87,7 @@ mod imp {
                 .buffer(&code_buffer)
                 .css_classes(["code-view"])
                 .build();
-            
+
             stack.add_child(&text_view);
             stack.add_child(&picture);
             stack.add_child(&checklist_box);
@@ -134,7 +134,7 @@ mod imp {
             obj.add_css_class("text-block");
 
             let overlay = gtk::Overlay::new();
-            
+
             let frame = gtk::Frame::new(None);
             frame.set_child(Some(&self.stack));
             overlay.set_child(Some(&frame));
@@ -151,7 +151,9 @@ mod imp {
                         let btn_weak = b.downgrade();
                         let o_weak = obj_weak.clone();
                         glib::timeout_add_local(std::time::Duration::from_millis(500), move || {
-                            if let (Some(b_ref), Some(o_ref)) = (btn_weak.upgrade(), o_weak.upgrade()) {
+                            if let (Some(b_ref), Some(o_ref)) =
+                                (btn_weak.upgrade(), o_weak.upgrade())
+                            {
                                 if b_ref.label().as_deref() == Some("Stop Focus") {
                                     let elapsed = start_time.elapsed().as_secs();
                                     let total = 25 * 60;
@@ -185,20 +187,26 @@ mod imp {
                 .halign(gtk::Align::End)
                 .valign(gtk::Align::Start)
                 .build();
-            
-            delete_btn.connect_clicked(glib::clone!(#[weak] obj, move |_| {
-                obj.add_css_class("peel-out");
-                let obj_weak = obj.downgrade();
-                glib::timeout_add_local(std::time::Duration::from_millis(500), move || {
-                    if let Some(obj) = obj_weak.upgrade() {
-                        if let Some(canvas) = obj.parent().and_downcast::<crate::canvas::Canvas>() {
-                            canvas.remove_block(&obj);
+
+            delete_btn.connect_clicked(glib::clone!(
+                #[weak]
+                obj,
+                move |_| {
+                    obj.add_css_class("peel-out");
+                    let obj_weak = obj.downgrade();
+                    glib::timeout_add_local(std::time::Duration::from_millis(500), move || {
+                        if let Some(obj) = obj_weak.upgrade() {
+                            if let Some(canvas) =
+                                obj.parent().and_downcast::<crate::canvas::Canvas>()
+                            {
+                                canvas.remove_block(&obj);
+                            }
                         }
-                    }
-                    glib::ControlFlow::Break
-                });
-            }));
-            
+                        glib::ControlFlow::Break
+                    });
+                }
+            ));
+
             overlay.add_overlay(&delete_btn);
 
             let speak_btn = gtk::Button::builder()
@@ -207,62 +215,82 @@ mod imp {
                 .halign(gtk::Align::End)
                 .valign(gtk::Align::End)
                 .build();
-                
-            speak_btn.connect_clicked(glib::clone!(#[weak] obj, move |_| {
-                let text = obj.get_content();
-                if !text.is_empty() {
-                    let clean_text = text.replace("[CHECKLIST]", "").replace("\"", "");
-                    std::thread::spawn(move || {
-                        let _ = std::process::Command::new("spd-say")
-                            .arg(&clean_text)
-                            .output();
-                    });
+
+            speak_btn.connect_clicked(glib::clone!(
+                #[weak]
+                obj,
+                move |_| {
+                    let text = obj.get_content();
+                    if !text.is_empty() {
+                        let clean_text = text.replace("[CHECKLIST]", "").replace("\"", "");
+                        std::thread::spawn(move || {
+                            let _ = std::process::Command::new("spd-say")
+                                .arg(&clean_text)
+                                .output();
+                        });
+                    }
                 }
-            }));
-            
+            ));
+
             overlay.add_overlay(&speak_btn);
-            
+
             let link_btn = gtk::Button::builder()
                 .icon_name("insert-link-symbolic")
                 .css_classes(["delete-btn", "flat"])
                 .halign(gtk::Align::Start)
                 .valign(gtk::Align::Start)
                 .build();
-            link_btn.connect_clicked(glib::clone!(#[weak] obj, move |_| {
-                if let Some(canvas) = obj.parent().and_downcast::<crate::canvas::Canvas>() {
-                    canvas.start_linking(obj.imp().data.borrow().id);
+            link_btn.connect_clicked(glib::clone!(
+                #[weak]
+                obj,
+                move |_| {
+                    if let Some(canvas) = obj.parent().and_downcast::<crate::canvas::Canvas>() {
+                        canvas.start_linking(obj.imp().data.borrow().id);
+                    }
                 }
-            }));
+            ));
             overlay.add_overlay(&link_btn);
-            
+
             overlay.set_parent(&*obj);
 
             let drag = gtk::GestureDrag::new();
             obj.add_controller(drag.clone());
 
-            drag.connect_drag_update(glib::clone!(#[weak] obj, move |drag, offset_x, offset_y| {
-                if let Some(parent) = obj.parent().and_downcast::<gtk::Fixed>() {
-                    let data = obj.imp().data.borrow();
-                    let new_x = data.x + offset_x;
-                    let new_y = data.y + offset_y;
-                    parent.move_(&obj, new_x, new_y);
-                    drag.set_state(gtk::EventSequenceState::Claimed);
+            drag.connect_drag_update(glib::clone!(
+                #[weak]
+                obj,
+                move |drag, offset_x, offset_y| {
+                    if let Some(parent) = obj.parent().and_downcast::<gtk::Fixed>() {
+                        let data = obj.imp().data.borrow();
+                        let new_x = data.x + offset_x;
+                        let new_y = data.y + offset_y;
+                        parent.move_(&obj, new_x, new_y);
+                        drag.set_state(gtk::EventSequenceState::Claimed);
+                    }
                 }
-            }));
+            ));
 
-            drag.connect_drag_end(glib::clone!(#[weak] obj, move |_, offset_x, offset_y| {
-                {
-                    let mut data = obj.imp().data.borrow_mut();
-                    data.x += offset_x;
-                    data.y += offset_y;
+            drag.connect_drag_end(glib::clone!(
+                #[weak]
+                obj,
+                move |_, offset_x, offset_y| {
+                    {
+                        let mut data = obj.imp().data.borrow_mut();
+                        data.x += offset_x;
+                        data.y += offset_y;
+                    }
+                    obj.imp().save_data();
                 }
-                obj.imp().save_data();
-            }));
+            ));
 
             let buffer = self.text_view.buffer();
-            buffer.connect_changed(glib::clone!(#[weak] obj, move |_| {
-                obj.imp().save_data();
-            }));
+            buffer.connect_changed(glib::clone!(
+                #[weak]
+                obj,
+                move |_| {
+                    obj.imp().save_data();
+                }
+            ));
 
             // Keyboard shortcuts and math evaluation
             let key_controller = gtk::EventControllerKey::new();
@@ -295,7 +323,7 @@ mod imp {
                             let text = buffer.text(&buffer.start_iter(), &buffer.end_iter(), false).to_string();
                             let mut end_iter = buffer.end_iter();
                             buffer.insert(&mut end_iter, "\n[Generating...]");
-                            
+
                             let buffer_clone = buffer.clone();
                             glib::MainContext::default().spawn_local(async move {
                                 let result = crate::TOKIO_RT.spawn(async move {
@@ -316,14 +344,14 @@ mod imp {
                                         .json(&payload)
                                         .send()
                                         .await;
-                                        
+
                                     if let Ok(r) = res {
                                         if let Ok(json) = r.json::<serde_json::Value>().await {
                                             json["choices"][0]["message"]["content"].as_str().unwrap_or("Error parsing JSON").to_string()
                                         } else { "Error parsing JSON payload".to_string() }
                                     } else { "API request failed".to_string() }
                                 }).await.unwrap_or_else(|_| "Task panicked".to_string());
-                                
+
                                 let mut full_text = buffer_clone.text(&buffer_clone.start_iter(), &buffer_clone.end_iter(), false).to_string();
                                 full_text = full_text.replace("\n[Generating...]", &format!("\n\n{}", result));
                                 buffer_clone.set_text(&full_text);
@@ -337,8 +365,8 @@ mod imp {
                 // Inline math calculator
                 if key == gdk::Key::equal {
                     let mut insert_iter = buffer.iter_at_mark(&buffer.get_insert());
-                    let mut start_iter = insert_iter.clone();
-                    
+                    let mut start_iter = insert_iter;
+
                     // Find the start of the expression (space or newline)
                     while start_iter.backward_char() {
                         let c = start_iter.char();
@@ -368,7 +396,10 @@ mod imp {
             // Setup Markdown Tags
             let tag_table = buffer.tag_table();
             let bold_tag = gtk::TextTag::builder().name("bold").weight(700).build();
-            let italic_tag = gtk::TextTag::builder().name("italic").style(gtk::pango::Style::Italic).build();
+            let italic_tag = gtk::TextTag::builder()
+                .name("italic")
+                .style(gtk::pango::Style::Italic)
+                .build();
             let hide_tag = gtk::TextTag::builder().name("hide").invisible(true).build();
             tag_table.add(&bold_tag);
             tag_table.add(&italic_tag);
@@ -376,14 +407,22 @@ mod imp {
 
             // Focus controller for WYSIWYG
             let focus_ctrl = gtk::EventControllerFocus::new();
-            focus_ctrl.connect_enter(glib::clone!(#[weak] obj, move |_| {
-                let text_view = &obj.imp().text_view;
-                let buffer = text_view.buffer();
-                buffer.remove_all_tags(&buffer.start_iter(), &buffer.end_iter());
-            }));
-            focus_ctrl.connect_leave(glib::clone!(#[weak] obj, move |_| {
-                obj.imp().apply_markdown();
-            }));
+            focus_ctrl.connect_enter(glib::clone!(
+                #[weak]
+                obj,
+                move |_| {
+                    let text_view = &obj.imp().text_view;
+                    let buffer = text_view.buffer();
+                    buffer.remove_all_tags(&buffer.start_iter(), &buffer.end_iter());
+                }
+            ));
+            focus_ctrl.connect_leave(glib::clone!(
+                #[weak]
+                obj,
+                move |_| {
+                    obj.imp().apply_markdown();
+                }
+            ));
             self.text_view.add_controller(focus_ctrl);
         }
 
@@ -398,15 +437,17 @@ mod imp {
         fn apply_markdown(&self) {
             let buffer = self.text_view.buffer();
             buffer.remove_all_tags(&buffer.start_iter(), &buffer.end_iter());
-            let text = buffer.text(&buffer.start_iter(), &buffer.end_iter(), false).to_string();
+            let text = buffer
+                .text(&buffer.start_iter(), &buffer.end_iter(), false)
+                .to_string();
             let chars: Vec<char> = text.chars().collect();
             let mut i = 0;
             while i < chars.len() {
-                if i + 1 < chars.len() && chars[i] == '*' && chars[i+1] == '*' {
+                if i + 1 < chars.len() && chars[i] == '*' && chars[i + 1] == '*' {
                     let mut j = i + 2;
                     let mut found = false;
                     while j + 1 < chars.len() {
-                        if chars[j] == '*' && chars[j+1] == '*' {
+                        if chars[j] == '*' && chars[j + 1] == '*' {
                             found = true;
                             break;
                         }
@@ -419,7 +460,7 @@ mod imp {
                         let e_b = buffer.iter_at_offset(j as i32);
                         let s_h2 = buffer.iter_at_offset(j as i32);
                         let e_h2 = buffer.iter_at_offset((j + 2) as i32);
-                        
+
                         buffer.apply_tag_by_name("hide", &s_h1, &e_h1);
                         buffer.apply_tag_by_name("bold", &s_b, &e_b);
                         buffer.apply_tag_by_name("hide", &s_h2, &e_h2);
@@ -443,7 +484,7 @@ mod imp {
                         let e_i = buffer.iter_at_offset(j as i32);
                         let s_h2 = buffer.iter_at_offset(j as i32);
                         let e_h2 = buffer.iter_at_offset((j + 1) as i32);
-                        
+
                         buffer.apply_tag_by_name("hide", &s_h1, &e_h1);
                         buffer.apply_tag_by_name("italic", &s_i, &e_i);
                         buffer.apply_tag_by_name("hide", &s_h2, &e_h2);
@@ -477,14 +518,17 @@ mod imp {
     impl TextBlockWidget {
         pub fn init_data(&self, data: TextBlock) {
             self.data.replace(data.clone());
-            
+
             if data.content.starts_with("[IMAGE]") {
                 let path = data.content.trim_start_matches("[IMAGE]");
                 self.picture.set_filename(Some(path));
                 self.stack.set_visible_child(&self.picture);
             } else if data.content.starts_with("[FILE]") {
                 let path = data.content.trim_start_matches("[FILE]").to_string();
-                let file_name = std::path::Path::new(&path).file_name().unwrap_or_default().to_string_lossy();
+                let file_name = std::path::Path::new(&path)
+                    .file_name()
+                    .unwrap_or_default()
+                    .to_string_lossy();
                 self.file_btn.set_label(&format!("📎 Open {}", file_name));
                 self.file_btn.connect_clicked(move |_| {
                     let _ = std::process::Command::new("xdg-open").arg(&path).spawn();
@@ -504,57 +548,66 @@ mod imp {
                 self.apply_markdown();
                 self.stack.set_visible_child(&self.text_view);
             }
-            
-            self.obj().set_size_request(data.width as i32, data.height as i32);
+
+            self.obj()
+                .set_size_request(data.width as i32, data.height as i32);
         }
 
         pub fn render_checklist(&self) {
             while let Some(child) = self.checklist_box.first_child() {
                 self.checklist_box.remove(&child);
             }
-            
+
             let content = self.data.borrow().content.clone();
             let json_str = content.trim_start_matches("[CHECKLIST]").trim();
             let items: Vec<ChecklistItem> = serde_json::from_str(json_str).unwrap_or_default();
-            
+
             for (idx, item) in items.iter().enumerate() {
                 let check = gtk::CheckButton::builder()
                     .label(&item.text)
                     .active(item.checked)
                     .build();
-                
+
                 if item.checked {
                     check.add_css_class("strikethrough");
                 }
-                
+
                 let obj = self.obj();
-                check.connect_toggled(glib::clone!(#[weak] obj, move |btn| {
-                    let is_active = btn.is_active();
-                    if is_active {
-                        btn.add_css_class("strikethrough");
-                    } else {
-                        btn.remove_css_class("strikethrough");
+                check.connect_toggled(glib::clone!(
+                    #[weak]
+                    obj,
+                    move |btn| {
+                        let is_active = btn.is_active();
+                        if is_active {
+                            btn.add_css_class("strikethrough");
+                        } else {
+                            btn.remove_css_class("strikethrough");
+                        }
+                        obj.imp().update_checklist_item(idx, is_active);
                     }
-                    obj.imp().update_checklist_item(idx, is_active);
-                }));
-                
+                ));
+
                 self.checklist_box.append(&check);
             }
-            
+
             // Add new item entry
             let entry = gtk::Entry::builder()
                 .placeholder_text("Add item...")
                 .has_frame(false)
                 .build();
-                
+
             let obj = self.obj();
-            entry.connect_activate(glib::clone!(#[weak] obj, move |ent| {
-                let text = ent.text().to_string();
-                if !text.is_empty() {
-                    obj.imp().add_checklist_item(text);
+            entry.connect_activate(glib::clone!(
+                #[weak]
+                obj,
+                move |ent| {
+                    let text = ent.text().to_string();
+                    if !text.is_empty() {
+                        obj.imp().add_checklist_item(text);
+                    }
                 }
-            }));
-            
+            ));
+
             self.checklist_box.append(&entry);
         }
 
@@ -570,13 +623,16 @@ mod imp {
                 }
             }
         }
-        
+
         fn add_checklist_item(&self, text: String) {
             let content = self.data.borrow().content.clone();
             let json_str = content.trim_start_matches("[CHECKLIST]").trim();
             let mut items: Vec<ChecklistItem> = serde_json::from_str(json_str).unwrap_or_default();
-            
-            items.push(ChecklistItem { text, checked: false });
+
+            items.push(ChecklistItem {
+                text,
+                checked: false,
+            });
             let new_json = serde_json::to_string(&items).unwrap_or_default();
             self.data.borrow_mut().content = format!("[CHECKLIST] {}", new_json);
             self.save_data_no_sync();
@@ -591,16 +647,25 @@ mod imp {
 
         pub fn save_data(&self) {
             let mut data = self.data.borrow_mut();
-            if data.content.starts_with("[IMAGE]") || data.content.starts_with("[CHECKLIST]") || data.content.starts_with("[FILE]") || data.content.starts_with("[TIMER]") {
+            if data.content.starts_with("[IMAGE]")
+                || data.content.starts_with("[CHECKLIST]")
+                || data.content.starts_with("[FILE]")
+                || data.content.starts_with("[TIMER]")
+            {
                 // Do nothing, content is updated elsewhere
             } else if data.content.starts_with("[CODE]") {
                 let buffer = self.code_view.buffer();
-                data.content = format!("[CODE]\n{}", buffer.text(&buffer.start_iter(), &buffer.end_iter(), false));
+                data.content = format!(
+                    "[CODE]\n{}",
+                    buffer.text(&buffer.start_iter(), &buffer.end_iter(), false)
+                );
             } else {
                 let buffer = self.text_view.buffer();
-                data.content = buffer.text(&buffer.start_iter(), &buffer.end_iter(), false).to_string();
+                data.content = buffer
+                    .text(&buffer.start_iter(), &buffer.end_iter(), false)
+                    .to_string();
             }
-            
+
             if let Some(db) = DB.lock().unwrap().as_ref() {
                 let _ = db.upsert_block(&data);
             }
