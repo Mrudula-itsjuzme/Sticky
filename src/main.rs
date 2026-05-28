@@ -40,6 +40,9 @@ fn main() -> glib::ExitCode {
         // --- Autostart / background persistence ---
         // 1. Write ~/.config/autostart/sticky.desktop immediately (works everywhere).
         portals::install_autostart();
+        
+        // 1.5 Check if running as AppImage and integrate into application menu
+        portals::integrate_appimage();
 
         // 2. Also request the XDG Background portal permission (Flatpak / portal-aware DEs).
         //    This runs async so it never blocks startup, and errors are just logged.

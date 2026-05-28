@@ -77,6 +77,47 @@ pub fn install_autostart() {
     }
 }
 
+/// If running inside an AppImage, automatically register the app in the user's Application Menu.
+pub fn integrate_appimage() {
+    if let Ok(appimage_path) = std::env::var("APPIMAGE") {
+        let mut apps_dir = glib::user_data_dir();
+        apps_dir.push("applications");
+
+        if std::fs::create_dir_all(&apps_dir).is_ok() {
+            let desktop_path = apps_dir.join("sticky-appimage.desktop");
+            
+            let content = format!(
+                "[Desktop Entry]\n\
+                 Version=1.0\n\
+                 Type=Application\n\
+                 Name=Sticky\n\
+                 GenericName=Sticky Notes\n\
+                 Comment=Modern floating sticky notes and infinite whiteboard\n\
+                 Exec=\"{}\"\n\
+                 Icon=accessories-text-editor\n\
+                 Terminal=false\n\
+                 Categories=Utility;Office;\n\
+                 Keywords=sticky;notes;whiteboard;todo;\n\
+                 StartupWMClass=Sticky\n",
+                appimage_path
+            );
+
+            if std::fs::write(&desktop_path, &content).is_ok() {
+                log::info!("AppImage automatically integrated into Application Menu: {:?}", desktop_path);
+                
+                // Force a desktop database update if the binary exists
+                if let Ok(Ok(_child)) = std::process::Command::new("update-desktop-database")
+                    .arg(&apps_dir)
+                    .spawn()
+                    .map(|mut c| c.wait()) 
+                {
+                    log::info!("Desktop database updated.");
+                }
+            }
+        }
+    }
+}
+
 pub async fn pick_color() -> ashpd::Result<Option<String>> {
     let color = Color::pick().send().await?.response()?;
 

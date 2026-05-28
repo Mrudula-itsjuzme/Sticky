@@ -107,7 +107,7 @@ Use the command palette to quickly add blocks, change colors, trigger actions, o
 
 Download the latest version from the [Releases](https://github.com/Mrudula-itsjuzme/Sticky/releases/latest) page.
 
-Release builds may include Linux and Windows assets depending on the version.
+Release builds may include Linux (`.deb` and `.AppImage`) and Windows (`.msi`) assets depending on the version.
 
 > Sticky is a native desktop application. Do not use GitHub Packages, npm, or Docker to install it. Download the release asset for your platform.
 
@@ -147,7 +147,6 @@ sudo pacman -S gtk4 libadwaita sqlite speech-dispatcher alsa-utils
 
 Get the latest version of Sticky for your operating system from our **[Releases Page](https://github.com/mrudula-itsjuzme/Sticky/releases)**.
 
-### 🐧 Linux (Debian / Ubuntu)
 1. Download the latest `sticky_X.X.X_amd64.deb` file.
 2. Double-click the downloaded file to install it via your Software Center, or install via terminal:
    ```bash
@@ -155,7 +154,14 @@ Get the latest version of Sticky for your operating system from our **[Releases 
    ```
 3. Launch **Sticky** from your application menu!
 
-*(To uninstall, simply run `sudo apt remove sticky`)*
+### Linux — `.AppImage` package (Portable)
+
+1. Download the `Sticky-x86_64.AppImage` from the Releases page.
+2. Make it executable: `chmod +x Sticky-x86_64.AppImage`
+3. Run it!
+4. **Auto-Integration:** The first time you run the AppImage, it will automatically register itself in your Application Menu so you can easily launch it next time without touching the terminal!
+
+*(To uninstall, simply run `sudo apt remove sticky` or delete the AppImage)*
 
 ### 🪟 Windows
 1. Download the latest `sticky-X.X.X.msi` installer.
@@ -179,6 +185,15 @@ The generated package will be available at:
 ```text
 target/debian/sticky_0.1.0-1_amd64.deb
 ```
+
+### 2. Building the `.AppImage` on Linux
+```bash
+cargo install cargo-appimage
+# Requires 'appimagetool' installed on your system
+cargo appimage
+```
+
+### 3. Building the `.msi` file on Windows
 
 Build the Windows installer:
 
