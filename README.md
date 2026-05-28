@@ -143,39 +143,27 @@ sudo pacman -S gtk4 libadwaita sqlite speech-dispatcher alsa-utils
 
 ## Installation
 
-Download the latest release from the **[Releases Page](https://github.com/Mrudula-itsjuzme/Sticky/releases/latest)**.
+**[⬇ Download Sticky](https://github.com/Mrudula-itsjuzme/Sticky/releases/latest)** — grab the installer for your platform and double-click to install.
 
-Each release includes separate downloads for each platform:
-
-| File | Platform | How to install |
+| Platform | Download | Install |
 |---|---|---|
-| `sticky_X.X.X_amd64.deb` | Debian / Ubuntu | Double-click or `sudo dpkg -i` |
-| `sticky.AppImage` | Any Linux distro | `chmod +x` and run — no install needed |
-| `sticky-X.X.X.msi` | Windows | Double-click the installer wizard |
+| **Linux** (Ubuntu, Debian, Mint, Pop!_OS) | `sticky_X.X.X_amd64.deb` | `sudo apt install ./sticky_*.deb` |
+| **Windows** | `sticky-X.X.X.msi` | Double-click the installer. Done. |
 
-### Linux — Install via `.deb`
-```bash
-sudo dpkg -i sticky_0.1.0-1_amd64.deb
-```
-Launch **Sticky** from your application menu.
+That's it. Launch **Sticky** from your application menu or Start Menu after installing, or just type `sticky` in your terminal.
 
-### Linux — Run the `.AppImage` (portable, no install)
-```bash
-chmod +x sticky.AppImage
-./sticky.AppImage
-```
-The first time you run the AppImage, it will automatically register itself in your Application Menu.
+> *Advanced Linux users:* An `.AppImage` is also available in releases if you prefer a portable, no-install option. Just `chmod +x` and run it.
 
-### Windows
-
-> **Note:** The Windows `.msi` installer must be built on a Windows machine. A pre-built `.msi` may not be available in every release.
-
-If a `sticky-X.X.X.msi` file is included in the release:
-1. Download and double-click the `.msi` installer.
-2. Follow the setup wizard.
-3. Launch **Sticky** from your Start Menu or Desktop shortcut.
-
-If no `.msi` is provided, see the [Building from Source](#for-developers-building-from-source) section below to compile on Windows.
+> **Troubleshooting:**
+> - **Duplicate launcher entries:** If you see two entries for Sticky in your application menu, it means a stale local desktop file exists from a previous dev install. Fix it with:
+>   ```bash
+>   rm ~/.local/share/applications/*sticky*.desktop
+>   update-desktop-database ~/.local/share/applications 2>/dev/null || true
+>   ```
+> - **Icon doesn't update:** If you see a generic gear icon instead of the yellow sticky note, run:
+>   ```bash
+>   sudo gtk-update-icon-cache /usr/share/icons/hicolor
+>   ```
 
 ---
 
@@ -205,6 +193,8 @@ cargo appimage
 The generated AppImage will be at `target/appimage/sticky.AppImage`.
 
 ### 3. Building the `.msi` file on Windows
+
+> **Known Limitation:** Sticky is built primarily as a Linux-first application. Windows support via WiX is experimental and some native window-manager features may behave differently.
 
 > This step **must** be done on a Windows machine. Cross-compiling GTK4 apps for Windows from Linux is not supported.
 

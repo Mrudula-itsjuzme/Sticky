@@ -1,13 +1,9 @@
 [Desktop Entry]
-Version=1.0
 Type=Application
 Name=Sticky
-GenericName=Sticky Notes
-Comment=Modern floating sticky notes and infinite whiteboard
+Comment=Modern floating sticky notes and infinite whiteboard for Linux
 Exec=sticky
 Icon=sticky
 Terminal=false
-Categories=Utility;Office;
-Keywords=sticky;notes;whiteboard;todo;
-StartupWMClass=Sticky
-X-GNOME-Autostart-enabled=true
+Categories=Utility;GTK;
+StartupNotify=true

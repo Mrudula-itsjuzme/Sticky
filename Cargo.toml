@@ -33,4 +33,6 @@ priority = "optional"
 assets = [
     ["target/release/sticky", "usr/bin/", "755"],
     ["assets/sticky.desktop", "usr/share/applications/", "644"],
+    ["assets/sticky.png", "usr/share/icons/hicolor/256x256/apps/", "644"],
 ]
+maintainer-scripts = "debian/"

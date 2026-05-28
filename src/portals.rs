@@ -38,7 +38,8 @@ pub async fn request_background() -> ashpd::Result<()> {
 }
 
 /// Write an XDG autostart .desktop file so the app relaunches on every login.
-/// This works on any desktop environment (GNOME, KDE, Xfce, …).
+/// This file goes into ~/.config/autostart/ and is **not** a launcher entry.
+/// NoDisplay=true ensures it never appears in the application menu.
 pub fn install_autostart() {
     let exe = match std::env::current_exe() {
         Ok(p) => p,
@@ -56,17 +57,17 @@ pub fn install_autostart() {
         return;
     }
 
-    autostart_dir.push("sticky.desktop");
+    autostart_dir.push("sticky-autostart.desktop");
 
     let content = format!(
         "[Desktop Entry]\n\
          Type=Application\n\
-         Name=Sticky Notes\n\
-         Comment=Sticky notes that survive shutdowns and reboots\n\
+         Name=Sticky Autostart\n\
+         Comment=Auto-start Sticky on login\n\
          Exec={}\n\
-         Icon=accessories-text-editor\n\
+         Icon=sticky\n\
          Hidden=false\n\
-         NoDisplay=false\n\
+         NoDisplay=true\n\
          X-GNOME-Autostart-enabled=true\n",
         exe.display()
     );
@@ -78,6 +79,7 @@ pub fn install_autostart() {
 }
 
 /// If running inside an AppImage, automatically register the app in the user's Application Menu.
+/// This only creates a launcher when the APPIMAGE env var is present (set by AppImage runtime).
 pub fn integrate_appimage() {
     if let Ok(appimage_path) = std::env::var("APPIMAGE") {
         let mut apps_dir = glib::user_data_dir();
@@ -85,34 +87,31 @@ pub fn integrate_appimage() {
 
         if std::fs::create_dir_all(&apps_dir).is_ok() {
             let desktop_path = apps_dir.join("sticky-appimage.desktop");
-            
+
             let content = format!(
                 "[Desktop Entry]\n\
-                 Version=1.0\n\
                  Type=Application\n\
                  Name=Sticky\n\
-                 GenericName=Sticky Notes\n\
                  Comment=Modern floating sticky notes and infinite whiteboard\n\
                  Exec=\"{}\"\n\
-                 Icon=accessories-text-editor\n\
+                 Icon=sticky\n\
                  Terminal=false\n\
-                 Categories=Utility;Office;\n\
-                 Keywords=sticky;notes;whiteboard;todo;\n\
-                 StartupWMClass=Sticky\n",
+                 Categories=Utility;GTK;\n\
+                 StartupNotify=true\n",
                 appimage_path
             );
 
             if std::fs::write(&desktop_path, &content).is_ok() {
-                log::info!("AppImage automatically integrated into Application Menu: {:?}", desktop_path);
-                
-                // Force a desktop database update if the binary exists
-                if let Ok(Ok(_child)) = std::process::Command::new("update-desktop-database")
+                log::info!(
+                    "AppImage integrated into Application Menu: {:?}",
+                    desktop_path
+                );
+
+                // Refresh the desktop database so the launcher picks it up immediately
+                let _ = std::process::Command::new("update-desktop-database")
                     .arg(&apps_dir)
                     .spawn()
-                    .map(|mut c| c.wait()) 
-                {
-                    log::info!("Desktop database updated.");
-                }
+                    .and_then(|mut c| c.wait());
             }
         }
     }

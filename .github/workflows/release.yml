@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-and-release:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgtk-4-dev libadwaita-1-dev libsqlite3-dev speech-dispatcher alsa-utils
+
+    - name: Set up Rust
+      uses: dtolnay/rust-toolchain@stable
+      
+    - name: Install packaging tools
+      run: cargo install cargo-deb
+
+    - name: Build Debian Package
+      run: cargo deb
+
+    - name: Generate Checksums
+      run: |
+        cd target/debian
+        sha256sum sticky_*.deb > sha256sums.txt
+        
+    - name: Upload Release Assets
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          target/debian/sticky_*.deb
+          target/debian/sha256sums.txt
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

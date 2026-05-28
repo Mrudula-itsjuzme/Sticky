@@ -17,6 +17,18 @@ pub static TOKIO_RT: Lazy<tokio::runtime::Runtime> =
     Lazy::new(|| tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime"));
 
 fn main() -> glib::ExitCode {
+    let args: Vec<String> = std::env::args().collect();
+    if args.iter().any(|arg| arg == "--version" || arg == "-v") {
+        println!("sticky {}", env!("CARGO_PKG_VERSION"));
+        return glib::ExitCode::SUCCESS;
+    }
+
+    if args.iter().any(|arg| arg == "--install-autostart") {
+        portals::install_autostart();
+        println!("Autostart entry installed.");
+        return glib::ExitCode::SUCCESS;
+    }
+
     env_logger::init();
 
     let app = adw::Application::builder()
@@ -37,11 +49,8 @@ fn main() -> glib::ExitCode {
             gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
         );
 
-        // --- Autostart / background persistence ---
-        // 1. Write ~/.config/autostart/sticky.desktop immediately (works everywhere).
-        portals::install_autostart();
-        
-        // 1.5 Check if running as AppImage and integrate into application menu
+        // --- AppImage integration ---
+        // Check if running as AppImage and integrate into application menu
         portals::integrate_appimage();
 
         // 2. Also request the XDG Background portal permission (Flatpak / portal-aware DEs).
