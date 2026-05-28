@@ -123,13 +123,13 @@ mod imp {
         fn constructed(&self) {
             self.parent_constructed();
             let obj = self.obj();
-            
+
             self.empty_label.set_label("Double-click to write...");
             self.empty_label.add_css_class("sticky-empty-state");
             self.empty_label.set_halign(gtk::Align::Center);
             self.empty_label.set_valign(gtk::Align::Center);
+            self.empty_label.set_can_target(false);
             obj.put(&self.empty_label, 16.0, 16.0);
-
 
             let click = gtk::GestureClick::new();
             obj.add_controller(click.clone());
@@ -178,19 +178,24 @@ mod imp {
 
     impl WidgetImpl for Canvas {
         fn snapshot(&self, snapshot: &gtk::Snapshot) {
+            let width = self.obj().width() as f64;
+            let height = self.obj().height() as f64;
+            
+            // Draw an invisible background so GTK registers clicks
+            let cr = snapshot.append_cairo(&gtk::graphene::Rect::new(
+                0.0,
+                0.0,
+                width as f32,
+                height as f32,
+            ));
+            cr.set_source_rgba(0.0, 0.0, 0.0, 0.0);
+            cr.paint().ok();
+
             // Draw whiteboard dot-grid background
             if self.whiteboard_mode.get() {
-                let width = self.obj().width() as f64;
-                let height = self.obj().height() as f64;
                 let spacing = 28.0f64;
                 let dot_r = 1.5f32;
 
-                let cr = snapshot.append_cairo(&gtk::graphene::Rect::new(
-                    0.0,
-                    0.0,
-                    width as f32,
-                    height as f32,
-                ));
                 // Whiteboard white fill
                 cr.set_source_rgba(0.98, 0.98, 1.0, 1.0);
                 cr.paint().ok();
