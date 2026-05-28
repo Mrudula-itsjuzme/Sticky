@@ -1,42 +1,67 @@
 @define-color sticky_yellow #FFE66D;
-@define-color sticky_shadow rgba(0, 0, 0, 0.2);
-@define-color block_bg rgba(255, 255, 255, 0.15);
-@define-color block_hover rgba(255, 255, 255, 0.25);
+@define-color sticky_shadow rgba(0, 0, 0, 0.15);
+@define-color block_bg rgba(255, 255, 255, 0.35);
+@define-color block_hover rgba(255, 255, 255, 0.5);
 
 .sticky-note {
     background-color: @sticky_yellow;
-    border-radius: 16px;
-    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12);
 }
 
 headerbar {
     background: transparent;
     border: none;
-    padding: 4px;
+    padding: 8px 12px;
 }
 
 headerbar button {
     border-radius: 50%;
-    min-width: 32px;
-    min-height: 32px;
-    opacity: 0.6;
+    min-width: 36px;
+    min-height: 36px;
+    opacity: 0.7;
+    transition: all 250ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 headerbar button:hover {
     opacity: 1.0;
-    background-color: rgba(0, 0, 0, 0.05);
+    background: rgba(255, 255, 255, 0.5);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+headerbar button:active {
+    transform: scale(0.95);
 }
 
 .text-block {
     background-color: @block_bg;
-    border-radius: 8px;
-    padding: 8px;
-    margin: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 12px;
+    margin: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    transition: all 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .text-block:hover {
     background-color: @block_hover;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+    transform: translateY(-4px) scale(1.02);
+}
+
+.peel-out {
+    animation: peelOff 0.5s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+    pointer-events: none;
+}
+
+@keyframes peelOff {
+    0% { transform: scale(1) rotate(0deg); opacity: 1; }
+    20% { transform: scale(1.05) rotate(-2deg); opacity: 1; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+    100% { transform: scale(0.5) rotate(15deg) translateY(150px); opacity: 0; }
 }
 
 textview {
@@ -46,14 +71,20 @@ textview {
 textview text {
     background: transparent;
     color: rgba(0, 0, 0, 0.85);
-    font-size: 14px;
+    font-size: 18px;
+    font-family: 'Caveat', 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive;
+    line-height: 1.5;
 }
 
 .delete-btn {
     opacity: 0;
-    background: rgba(255, 0, 0, 0.1);
-    color: #d20f39;
+    background: rgba(255, 59, 48, 0.15);
+    color: #FF3B30;
     border-radius: 50%;
+    transition: all 200ms ease;
+    min-width: 24px;
+    min-height: 24px;
+    padding: 4px;
 }
 
 .text-block:hover .delete-btn {
@@ -61,5 +92,99 @@ textview text {
 }
 
 .delete-btn:hover {
-    background: rgba(255, 0, 0, 0.2);
+    background: rgba(255, 59, 48, 0.9);
+    color: white;
+    transform: scale(1.1);
+}
+
+.recording-active {
+    background: rgba(255, 59, 48, 0.9) !important;
+    color: white;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%   { transform: scale(1);    box-shadow: 0 0 0 0px  rgba(255, 59, 48, 0.7); }
+    70%  { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(255, 59, 48, 0);   }
+    100% { transform: scale(1);    box-shadow: 0 0 0 0px  rgba(255, 59, 48, 0);   }
+}
+
+checkbutton.strikethrough label {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+.checklist-box {
+    margin-top: 4px;
+}
+
+.timer-label {
+    font-size: 32px;
+    font-weight: bold;
+    font-family: monospace;
+}
+
+.timer-done {
+    background-color: rgba(255, 59, 48, 0.5) !important;
+    animation: pulse 2s infinite;
+}
+
+.code-view text {
+    font-family: monospace !important;
+    font-size: 14px;
+    background: rgba(0, 0, 0, 0.05);
+    padding: 8px;
+    border-radius: 6px;
+}
+
+.file-btn {
+    font-weight: bold;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+}
+
+.search-window {
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
+}
+
+.search-results button {
+    padding: 12px;
+    margin: 4px 8px;
+    border-radius: 8px;
+    background: transparent;
+    text-align: left;
+}
+
+.search-results button:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.highlight {
+    animation: glow 1.5s ease-out;
+}
+
+@keyframes glow {
+    0% { box-shadow: 0 0 0 0 rgba(255, 230, 109, 0.8); }
+    50% { box-shadow: 0 0 30px 15px rgba(255, 230, 109, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 230, 109, 0); }
+}
+
+.command-palette {
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    padding: 8px;
+}
+
+.command-palette button {
+    text-align: left;
+    padding: 8px 16px;
+    border-radius: 6px;
+    margin: 2px 0;
+}
+
+.command-palette button:hover {
+    background: rgba(0, 0, 0, 0.05);
 }

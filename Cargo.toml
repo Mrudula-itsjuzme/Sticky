@@ -1,5 +1,5 @@
 [package]
-name = "antigrav"
+name = "sticky"
 version = "0.1.0"
 edition = "2021"
 
@@ -18,3 +18,5 @@ gdk = { package = "gdk4", version = "0.9" }
 gio = { package = "gio", version = "0.20" }
 glib = { package = "glib", version = "0.20" }
 evalexpr = "13.1.0"
+reqwest = { version = "0.13.4", features = ["multipart", "json"] }
+ksni = "0.2"

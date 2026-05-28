@@ -16,7 +16,7 @@ impl StickyWindow {
     pub fn new(app: &adw::Application, note: Note) -> Self {
         let window: Self = glib::Object::builder()
             .property("application", app)
-            .property("title", "Antigrav")
+            .property("title", "Sticky")
             .property("decorated", false)
             .property("default-width", note.width)
             .property("default-height", note.height)
@@ -30,10 +30,12 @@ impl StickyWindow {
 mod imp {
     use super::*;
     use std::cell::RefCell;
+    use std::process::{Command, Child};
 
     #[derive(Default)]
     pub struct StickyWindow {
         pub note: RefCell<Option<Note>>,
+        pub recording_process: RefCell<Option<Child>>,
     }
 
     #[glib::object_subclass]
@@ -83,17 +85,208 @@ mod imp {
             }));
             header.pack_start(&new_note_button);
 
+            let share_button = gtk::Button::builder()
+                .icon_name("edit-copy-symbolic")
+                .tooltip_text("Copy All Text")
+                .build();
+            share_button.connect_clicked(glib::clone!(#[weak] obj, move |_| {
+                if let Some(content_box) = obj.content().and_downcast::<gtk::Box>() {
+                    if let Some(canvas) = content_box.last_child().and_downcast::<Canvas>() {
+                        let text = canvas.get_all_text();
+                        if let Some(display) = gtk::gdk::Display::default() {
+                            display.clipboard().set_text(&text);
+                        }
+                    }
+                }
+            }));
+            header.pack_start(&share_button);
+
+            let checklist_button = gtk::Button::builder()
+                .icon_name("view-list-symbolic")
+                .tooltip_text("Add Checklist")
+                .build();
+            checklist_button.connect_clicked(glib::clone!(#[weak] obj, move |_| {
+                if let Some(content_box) = obj.content().and_downcast::<gtk::Box>() {
+                    if let Some(canvas) = content_box.last_child().and_downcast::<Canvas>() {
+                        canvas.create_block_with_content(20.0, 100.0, "[CHECKLIST] []".to_string());
+                    }
+                }
+            }));
+            header.pack_start(&checklist_button);
+
+            let code_button = gtk::Button::builder()
+                .icon_name("text-editor-symbolic")
+                .tooltip_text("Add Code Snippet")
+                .build();
+            code_button.connect_clicked(glib::clone!(#[weak] obj, move |_| {
+                if let Some(content_box) = obj.content().and_downcast::<gtk::Box>() {
+                    if let Some(canvas) = content_box.last_child().and_downcast::<Canvas>() {
+                        canvas.create_block_with_content(20.0, 120.0, "[CODE]\n// Write code here...".to_string());
+                    }
+                }
+            }));
+            header.pack_start(&code_button);
+
+            let timer_button = gtk::Button::builder()
+                .icon_name("alarm-symbolic")
+                .tooltip_text("Pomodoro Timer")
+                .build();
+            timer_button.connect_clicked(glib::clone!(#[weak] obj, move |_| {
+                if let Some(content_box) = obj.content().and_downcast::<gtk::Box>() {
+                    if let Some(canvas) = content_box.last_child().and_downcast::<Canvas>() {
+                        canvas.create_block_with_content(20.0, 140.0, "[TIMER]".to_string());
+                    }
+                }
+            }));
+            header.pack_start(&timer_button);
+
+            let mic_button = gtk::Button::builder()
+                .icon_name("audio-input-microphone-symbolic")
+                .tooltip_text("Capture Audio")
+                .build();
+
+            mic_button.connect_clicked(glib::clone!(#[weak] obj, move |btn| {
+                let mut proc_opt = obj.imp().recording_process.borrow_mut();
+                if proc_opt.is_none() {
+                    // Start recording
+                    btn.add_css_class("recording-active");
+                    let child = Command::new("arecord")
+                        .args(["-f", "S16_LE", "-r", "16000", "/tmp/meeting.wav"])
+                        .spawn();
+                    
+                    if let Ok(child) = child {
+                        *proc_opt = Some(child);
+                    }
+                } else {
+                    // Stop recording
+                    btn.remove_css_class("recording-active");
+                    if let Some(mut child) = proc_opt.take() {
+                        let _ = child.kill();
+                        let _ = child.wait();
+                    }
+                    
+                    if let Some(content_box) = obj.content().and_downcast::<gtk::Box>() {
+                        if let Some(canvas) = content_box.last_child().and_downcast::<Canvas>() {
+                            let canvas = canvas.clone();
+                            glib::MainContext::default().spawn_local(async move {
+                                let result = crate::TOKIO_RT.spawn(async move {
+                                    let api_key = std::env::var("OPENAI_API_KEY").unwrap_or_default();
+                                    if api_key.is_empty() {
+                                        return Err("🎙️ Transcription failed: OPENAI_API_KEY not set.".to_string());
+                                    }
+                                    
+                                    let file_bytes = std::fs::read("/tmp/meeting.wav").unwrap_or_default();
+                                    if file_bytes.is_empty() { return Err("Failed to read audio file".to_string()); }
+                                    
+                                    let part = reqwest::multipart::Part::bytes(file_bytes)
+                                        .file_name("meeting.wav")
+                                        .mime_str("audio/wav")
+                                        .unwrap();
+                                    let form = reqwest::multipart::Form::new()
+                                        .text("model", "whisper-1")
+                                        .part("file", part);
+                                        
+                                    let client = reqwest::Client::new();
+                                    let res = client.post("https://api.openai.com/v1/audio/transcriptions")
+                                        .bearer_auth(&api_key)
+                                        .multipart(form)
+                                        .send()
+                                        .await;
+                                        
+                                    let mut transcription = String::new();
+                                    if let Ok(res) = res {
+                                        if let Ok(json) = res.json::<serde_json::Value>().await {
+                                            if let Some(text) = json.get("text").and_then(|t| t.as_str()) {
+                                                transcription = text.to_string();
+                                            }
+                                        }
+                                    }
+                                    
+                                    if !transcription.is_empty() {
+                                        let prompt = format!("Summarize the meeting and extract action items. Return a JSON object with 'summary' (string) and 'action_items' (array of strings):\n\n{}", transcription);
+                                        let payload = serde_json::json!({
+                                            "model": "gpt-4o-mini",
+                                            "response_format": { "type": "json_object" },
+                                            "messages": [{"role": "user", "content": prompt}]
+                                        });
+                                        
+                                        let sum_res = client.post("https://api.openai.com/v1/chat/completions")
+                                            .bearer_auth(&api_key)
+                                            .json(&payload)
+                                            .send()
+                                            .await;
+                                            
+                                        if let Ok(r) = sum_res {
+                                            if let Ok(json) = r.json::<serde_json::Value>().await {
+                                                if let Some(msg) = json["choices"][0]["message"]["content"].as_str() {
+                                                    if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(msg) {
+                                                        let summary = parsed["summary"].as_str().unwrap_or("").to_string();
+                                                        let action_items: Vec<String> = parsed["action_items"].as_array().unwrap_or(&vec![]).iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect();
+                                                        return Ok((summary, action_items));
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        Err("Failed to parse summary API response".to_string())
+                                    } else {
+                                        Err("Failed to transcribe audio. Ensure microphone is working.".to_string())
+                                    }
+                                }).await.unwrap_or_else(|_| Err("Async task panicked".to_string()));
+                                
+                                match result {
+                                    Ok((summary, action_items)) => {
+                                        canvas.create_block_with_content(20.0, 40.0, format!("🎙️ Meeting Summary:\n\n{}", summary));
+                                        
+                                        if !action_items.is_empty() {
+                                            use crate::text_block::ChecklistItem;
+                                            let items: Vec<ChecklistItem> = action_items.into_iter().map(|t| ChecklistItem { text: t, checked: false }).collect();
+                                            if let Ok(json_str) = serde_json::to_string(&items) {
+                                                canvas.create_block_with_content(20.0, 200.0, format!("[CHECKLIST] {}", json_str));
+                                            }
+                                        }
+                                    }
+                                    Err(err) => {
+                                        canvas.create_block_with_content(20.0, 40.0, err);
+                                    }
+                                }
+                            });
+                        }
+                    }
+                }
+            }));
+            header.pack_start(&mic_button);
+
+            let trash_button = gtk::Button::builder()
+                .icon_name("user-trash-symbolic")
+                .tooltip_text("Delete Note")
+                .css_classes(["flat"])
+                .build();
+            trash_button.connect_clicked(glib::clone!(#[weak] obj, move |_| {
+                if let Some(content_box) = obj.content().and_downcast::<gtk::Box>() {
+                    content_box.add_css_class("peel-out");
+                }
+                let obj_weak = obj.downgrade();
+                glib::timeout_add_local(std::time::Duration::from_millis(500), move || {
+                    if let Some(obj) = obj_weak.upgrade() {
+                        if let Some(note) = obj.imp().note.borrow().as_ref() {
+                            if let Some(db) = DB.lock().unwrap().as_ref() {
+                                let _ = db.delete_note(note.id);
+                            }
+                        }
+                        obj.close();
+                    }
+                    glib::ControlFlow::Break
+                });
+            }));
+            header.pack_end(&trash_button);
+
             let close_button = gtk::Button::builder()
                 .icon_name("window-close-symbolic")
+                .tooltip_text("Hide Note")
                 .css_classes(["flat"])
                 .build();
             close_button.connect_clicked(glib::clone!(#[weak] obj, move |_| {
-                if let Some(note) = obj.imp().note.borrow().as_ref() {
-                    if let Some(db) = DB.lock().unwrap().as_ref() {
-                        let _ = db.delete_note(note.id);
-                    }
-                }
-                obj.close();
+                obj.close(); // Only hide/destroy window, remains in DB
             }));
             header.pack_end(&close_button);
 
@@ -121,6 +314,50 @@ mod imp {
             }));
             header.pack_end(&always_on_top_button);
 
+            let expand_button = gtk::Button::builder()
+                .icon_name("view-fullscreen-symbolic")
+                .tooltip_text("Expand to Whiteboard")
+                .css_classes(["flat"])
+                .build();
+            expand_button.connect_clicked(glib::clone!(#[weak] obj, move |btn| {
+                if let Some(content_box) = obj.content().and_downcast::<gtk::Box>() {
+                    if obj.is_maximized() {
+                        // --- Exit whiteboard mode ---
+                        obj.unmaximize();
+                        btn.set_icon_name("view-fullscreen-symbolic");
+                        btn.set_tooltip_text(Some("Expand to Whiteboard"));
+                        obj.remove_css_class("whiteboard-mode");
+                        // Unwrap ScrolledWindow, put canvas back directly
+                        if let Some(scroll) = content_box.last_child().and_downcast::<gtk::ScrolledWindow>() {
+                            if let Some(canvas) = scroll.child().and_downcast::<Canvas>() {
+                                canvas.set_whiteboard_mode(false);
+                                scroll.set_child(gtk::Widget::NONE);
+                                content_box.remove(&scroll);
+                                content_box.append(&canvas);
+                            }
+                        }
+                    } else {
+                        // --- Enter whiteboard mode ---
+                        obj.maximize();
+                        btn.set_icon_name("view-restore-symbolic");
+                        btn.set_tooltip_text(Some("Exit Whiteboard"));
+                        obj.add_css_class("whiteboard-mode");
+                        // Wrap canvas in ScrolledWindow for infinite-canvas feel
+                        if let Some(canvas) = content_box.last_child().and_downcast::<Canvas>() {
+                            canvas.set_whiteboard_mode(true);
+                            content_box.remove(&canvas);
+                            let scroll = gtk::ScrolledWindow::builder()
+                                .hexpand(true)
+                                .vexpand(true)
+                                .child(&canvas)
+                                .build();
+                            content_box.append(&scroll);
+                        }
+                    }
+                }
+            }));
+            header.pack_end(&expand_button);
+
             let content_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
             content_box.append(&header);
 
@@ -133,8 +370,31 @@ mod imp {
             let drag = gtk::GestureClick::new();
             header.add_controller(drag.clone());
             
-            drag.connect_pressed(glib::clone!(#[weak] obj, move |gesture, _, x, y| {
+            drag.connect_pressed(glib::clone!(#[weak] obj, move |gesture, n, x, y| {
                 gesture.set_state(gtk::EventSequenceState::Claimed);
+                
+                if n == 2 { // Double click to roll-up
+                    if let Some(content_box) = obj.content().and_downcast::<gtk::Box>() {
+                        if let Some(canvas) = content_box.last_child().and_downcast::<Canvas>() {
+                            let is_visible = canvas.is_visible();
+                            canvas.set_visible(!is_visible);
+                            
+                            if is_visible {
+                                // Roll up
+                                obj.set_size_request(-1, -1);
+                                obj.set_default_size(-1, -1);
+                            } else {
+                                // Unroll
+                                if let Some(note) = obj.imp().note.borrow().as_ref() {
+                                    obj.set_size_request(note.width, note.height);
+                                    obj.set_default_size(note.width, note.height);
+                                }
+                            }
+                        }
+                    }
+                    return;
+                }
+
                 if let Some(surface) = obj.surface() {
                     if let Some(toplevel) = surface.downcast_ref::<gdk::Toplevel>() {
                         if let Some(device) = gesture.device() {
@@ -143,6 +403,21 @@ mod imp {
                     }
                 }
             }));
+            
+            // Command Palette (Ctrl+K)
+            let key_ctrl = gtk::EventControllerKey::new();
+            let obj_weak = obj.downgrade();
+            let header_clone = header.clone();
+            key_ctrl.connect_key_pressed(move |_, keyval, _keycode, state| {
+                if let Some(obj) = obj_weak.upgrade() {
+                    if state.contains(gdk::ModifierType::CONTROL_MASK) && keyval == gdk::Key::k {
+                        obj.imp().show_command_palette(header_clone.upcast_ref::<gtk::Widget>());
+                        return glib::Propagation::Stop;
+                    }
+                }
+                glib::Propagation::Proceed
+            });
+            obj.add_controller(key_ctrl);
             
             obj.connect_default_width_notify(|obj| {
                 obj.imp().save_state();
@@ -182,6 +457,51 @@ mod imp {
                     let _ = db.update_note_color(note.id, &hex);
                 }
             }
+        }
+
+        pub fn show_command_palette(&self, anchor: &gtk::Widget) {
+            let popover = gtk::Popover::builder()
+                .position(gtk::PositionType::Bottom)
+                .autohide(true)
+                .has_arrow(false)
+                .build();
+            
+            popover.set_parent(anchor);
+            popover.add_css_class("command-palette");
+
+            let list_box = gtk::ListBox::builder()
+                .selection_mode(gtk::SelectionMode::None)
+                .build();
+
+            let actions = vec![
+                ("📝 Add Checklist", "[CHECKLIST] []"),
+                ("💻 Add Code Snippet", "[CODE]\n// type here"),
+                ("⏱️ Add Timer", "[TIMER]"),
+                ("🔴 Red Background", "#FF6B6B"),
+                ("🔵 Blue Background", "#4ECDC4"),
+                ("🟡 Yellow Background", "#FFE66D"),
+            ];
+
+            for (label, action) in actions {
+                let btn = gtk::Button::with_label(label);
+                btn.add_css_class("flat");
+                let obj = self.obj().clone();
+                let pop_ref = popover.clone();
+                btn.connect_clicked(move |_| {
+                    pop_ref.popdown();
+                    if action.starts_with('#') {
+                        obj.imp().update_color(action.to_string());
+                    } else if let Some(content_box) = obj.content().and_downcast::<gtk::Box>() {
+                        if let Some(canvas) = content_box.last_child().and_downcast::<Canvas>() {
+                            canvas.create_block_with_content(50.0, 50.0, action.to_string());
+                        }
+                    }
+                });
+                list_box.append(&btn);
+            }
+
+            popover.set_child(Some(&list_box));
+            popover.popup();
         }
 
         fn apply_color(&self, id: i64, hex: &str) {

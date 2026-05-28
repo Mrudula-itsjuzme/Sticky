@@ -30,7 +30,7 @@ pub struct Db {
 impl Db {
     pub fn init() -> Result<Self> {
         let mut db_path = glib::user_data_dir();
-        db_path.push("antigrav");
+        db_path.push("sticky");
         std::fs::create_dir_all(&db_path).unwrap_or_default();
         db_path.push("notes.db");
 
@@ -44,10 +44,12 @@ impl Db {
                 width INTEGER,
                 height INTEGER,
                 color TEXT,
-                always_on_top BOOLEAN
+                always_on_top BOOLEAN,
+                deleted BOOLEAN DEFAULT 0
             )",
             [],
         )?;
+        let _ = conn.execute("ALTER TABLE notes ADD COLUMN deleted BOOLEAN DEFAULT 0", []);
 
         conn.execute(
             "CREATE TABLE IF NOT EXISTS blocks (
@@ -63,11 +65,22 @@ impl Db {
             [],
         )?;
 
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS block_links (
+                source_id INTEGER,
+                target_id INTEGER,
+                PRIMARY KEY (source_id, target_id),
+                FOREIGN KEY(source_id) REFERENCES blocks(id) ON DELETE CASCADE,
+                FOREIGN KEY(target_id) REFERENCES blocks(id) ON DELETE CASCADE
+            )",
+            [],
+        )?;
+
         Ok(Self { conn })
     }
 
     pub fn get_notes(&self) -> Result<Vec<Note>> {
-        let mut stmt = self.conn.prepare("SELECT id, x, y, width, height, color, always_on_top FROM notes")?;
+        let mut stmt = self.conn.prepare("SELECT id, x, y, width, height, color, always_on_top FROM notes WHERE deleted = 0")?;
         let note_iter = stmt.query_map([], |row| {
             Ok(Note {
                 id: row.get(0)?,
@@ -90,6 +103,28 @@ impl Db {
     pub fn get_blocks(&self, note_id: i64) -> Result<Vec<TextBlock>> {
         let mut stmt = self.conn.prepare("SELECT id, note_id, x, y, width, height, content FROM blocks WHERE note_id = ?")?;
         let block_iter = stmt.query_map([note_id], |row| {
+            Ok(TextBlock {
+                id: row.get(0)?,
+                note_id: row.get(1)?,
+                x: row.get(2)?,
+                y: row.get(3)?,
+                width: row.get(4)?,
+                height: row.get(5)?,
+                content: row.get(6)?,
+            })
+        })?;
+
+        let mut blocks = Vec::new();
+        for block in block_iter {
+            blocks.push(block?);
+        }
+        Ok(blocks)
+    }
+
+    pub fn search_blocks(&self, query: &str) -> Result<Vec<TextBlock>> {
+        let sql = format!("%{}%", query);
+        let mut stmt = self.conn.prepare("SELECT id, note_id, x, y, width, height, content FROM blocks WHERE content LIKE ?")?;
+        let block_iter = stmt.query_map([sql], |row| {
             Ok(TextBlock {
                 id: row.get(0)?,
                 note_id: row.get(1)?,
@@ -137,7 +172,42 @@ impl Db {
     }
 
     pub fn delete_note(&self, id: i64) -> Result<()> {
-        self.conn.execute("DELETE FROM notes WHERE id = ?", [id])?;
+        self.conn.execute("UPDATE notes SET deleted = 1 WHERE id = ?", [id])?;
+        Ok(())
+    }
+
+    pub fn restore_last_deleted_note(&self) -> Result<Option<Note>> {
+        let mut stmt = self.conn.prepare("SELECT id, x, y, width, height, color, always_on_top FROM notes WHERE deleted = 1 ORDER BY id DESC LIMIT 1")?;
+        let mut rows = stmt.query([])?;
+        
+        if let Some(row) = rows.next()? {
+            let note = Note {
+                id: row.get(0)?,
+                x: row.get(1)?,
+                y: row.get(2)?,
+                width: row.get(3)?,
+                height: row.get(4)?,
+                color: row.get(5)?,
+                always_on_top: row.get(6)?,
+            };
+            self.conn.execute("UPDATE notes SET deleted = 0 WHERE id = ?", [note.id])?;
+            return Ok(Some(note));
+        }
+        Ok(None)
+    }
+
+    pub fn empty_trash(&self) -> Result<()> {
+        let mut stmt = self.conn.prepare("SELECT id FROM notes WHERE deleted = 1")?;
+        let mut note_ids = Vec::new();
+        let mut rows = stmt.query([])?;
+        while let Some(row) = rows.next()? {
+            note_ids.push(row.get::<_, i64>(0)?);
+        }
+        
+        for id in note_ids {
+            self.conn.execute("DELETE FROM blocks WHERE note_id = ?", [id])?;
+            self.conn.execute("DELETE FROM notes WHERE id = ?", [id])?;
+        }
         Ok(())
     }
 
@@ -160,6 +230,32 @@ impl Db {
     pub fn delete_block(&self, id: i64) -> Result<()> {
         self.conn.execute("DELETE FROM blocks WHERE id = ?", [id])?;
         Ok(())
+    }
+
+    pub fn link_blocks(&self, source_id: i64, target_id: i64) -> Result<()> {
+        self.conn.execute(
+            "INSERT OR IGNORE INTO block_links (source_id, target_id) VALUES (?, ?)",
+            params![source_id, target_id],
+        )?;
+        Ok(())
+    }
+
+    pub fn get_links_for_note(&self, note_id: i64) -> Result<Vec<(i64, i64)>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT l.source_id, l.target_id 
+             FROM block_links l
+             JOIN blocks b ON l.source_id = b.id
+             WHERE b.note_id = ?"
+        )?;
+        let iter = stmt.query_map([note_id], |row| {
+            Ok((row.get(0)?, row.get(1)?))
+        })?;
+        
+        let mut links = Vec::new();
+        for l in iter {
+            links.push(l?);
+        }
+        Ok(links)
     }
 }
 unsafe impl Send for Db {}
