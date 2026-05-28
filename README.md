@@ -1,191 +1,268 @@
 # Sticky
 
-Sticky is a powerful, modern GTK4-based desktop note-taking and whiteboard application written in Rust. It goes beyond simple sticky notes by providing an infinite whiteboard mode, Pomodoro timers, code snippets, file attachments, and AI-powered meeting summaries.
+**Sticky** is a modern Rust + GTK4 desktop productivity app that combines sticky notes, an infinite whiteboard, Pomodoro timers, code snippets, file attachments, and AI-powered meeting summaries.
 
-![Sticky Notes Showcase](https://via.placeholder.com/800x450.png?text=Showcase+Screenshot+-+Sticky+Notes+on+Desktop)
-*(Note: Replace placeholder with an actual screenshot or GIF of the app running!)*
+It is built for students, developers, writers, and productivity-focused users who want a local-first desktop workspace instead of another cloud-first notes app.
 
-## ⚠️ Status
-
-**Sticky is currently an experimental desktop productivity app.** Core sticky-note and whiteboard features are fully implemented and stable. AI meeting summaries require an OpenAI API key. 
-
-*Note: Some native desktop-window behaviors, such as edge peeking and magnetic snapping, rely on X11 semantics and may be limited on modern Wayland compositors without explicit extension support.*
-
-## ✨ Features
-
-- **Floating Sticky Notes**: Borderless, resizable, and color-customizable notes that float on your desktop.
-- **Infinite Whiteboard Mode**: Expand any note into a full-screen, infinite scrollable whiteboard with a dot-grid background.
-- **Block-Based Canvas**: Double-click anywhere to add different types of blocks:
-  - **Text & Handwriting**: Standard text with a beautiful cursive handwriting font.
-  - **Checklists**: Native checkboxes with a satisfying strike-through animation.
-  - **Code Snippets**: Monospaced font blocks for code and scripts.
-  - **Pomodoro Timers**: Built-in 25-minute focus timers that alert you when done.
-  - **File Attachments**: Drag and drop any file (images, PDFs, documents) to create an attachment block. Click to open in your default app.
-- **Mind-Map Mode**: Click the link (🔗) button on one block and then another to draw beautiful, organic bezier curves between them on the whiteboard!
-- **WYSIWYG Markdown Editing**: Type standard markdown (like `**bold**` or `*italic*`) and watch it instantly render as clean, stylized text the moment you click away.
-- **Export Notes**: Instantly export any note's contents to a standard `.md` file with the native save dialog.
-- **Templates & Themes**: Use the Command Palette to spawn predefined templates (Daily Planner, Meeting Notes, Bug Tracker, Kanban, LaTeX) or apply gorgeous UI themes (Pastel, Dark Glass, Terminal, etc.).
-- **Data Portability (Backup & Restore)**: Built-in SQLite backup support. Export your entire database from the System Tray to a safe location, or import an existing backup to restore your notes.
-- **AI Integration**:
-  - **Meeting Transcripts**: Click the microphone to record audio (uses `arecord`).
-  - **Summaries**: Automatically transcribed and summarized using OpenAI's Whisper and GPT APIs.
-- **Offline TTS**: A "Read Aloud" button on every block uses native Linux TTS (`spd-say`) to read your notes offline.
-- **System Tray Integration**: Runs quietly in the background. Access quick actions, search, and the Recycle Bin directly from your system tray.
-- **Recycle Bin**: Accidentally delete a note? Don't worry! Deleted notes are sent to a soft-delete trash and can be instantly restored from the System Tray.
-- **Global Spotlight Search**: Press `Ctrl+Shift+F` (or use the tray menu) to bring up a frosted-glass search bar to instantly find and focus any note.
-- **Command Palette**: Press `Ctrl+K` to quickly insert checklists, code snippets, timers, or change the note background color without using the mouse.
-- **ASMR Animations**: Satisfying hover physics, bouncy transitions, and a "peel-off" animation when trashing notes.
-- **Always on Top**: Pin your notes to keep them visible over other windows.
+[![Latest Release](https://img.shields.io/github/v/release/Mrudula-itsjuzme/Sticky?style=for-the-badge)](https://github.com/Mrudula-itsjuzme/Sticky/releases/latest)
+[![Built with Rust](https://img.shields.io/badge/built%20with-Rust-orange?style=for-the-badge)](https://www.rust-lang.org/)
+[![GTK4](https://img.shields.io/badge/UI-GTK4-blue?style=for-the-badge)](https://gtk-rs.org/)
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows-lightgrey?style=for-the-badge)](https://github.com/Mrudula-itsjuzme/Sticky/releases/latest)
 
 ---
 
-## 🚀 Getting Started
+## Status
+
+Sticky is currently an experimental desktop productivity app.
+
+Core sticky-note and whiteboard features are implemented. AI meeting summaries require an OpenAI API key. Some native desktop-window behaviors, such as edge peeking and magnetic snapping, may vary depending on X11 or Wayland compositor support.
+
+---
+
+## What is Sticky?
+
+Sticky is a local-first desktop notes app written in Rust using GTK4. It goes beyond basic sticky notes by combining floating notes, an infinite whiteboard, block-based editing, Pomodoro timers, code snippets, file attachments, search, and AI-assisted meeting summaries.
+
+It can be used as a:
+
+- Sticky notes manager
+- Infinite whiteboard
+- Pomodoro focus tool
+- Code snippet organizer
+- File attachment board
+- Meeting notes and summary assistant
+- Visual workspace for ideas, tasks, and study sessions
+
+---
+
+## Features
+
+### Floating sticky notes
+
+Create borderless, resizable, color-customizable sticky notes that stay on your desktop.
+
+### Infinite whiteboard mode
+
+Expand a note into a full-screen whiteboard with an infinite dot-grid canvas for visual planning, brainstorming, and idea mapping.
+
+### Block-based canvas
+
+Double-click anywhere on the canvas to add different types of blocks:
+
+- Text blocks
+- Checklist blocks
+- Code snippet blocks
+- Pomodoro timer blocks
+- File attachment blocks
+
+### Mind-map links
+
+Connect blocks visually using curved links to build lightweight mind maps and idea flows.
+
+### WYSIWYG Markdown editing
+
+Write simple Markdown-style text and let Sticky render it into clean formatted content.
+
+### Export notes
+
+Export note contents to a standard Markdown file using the native save dialog.
+
+### Templates and themes
+
+Use the command palette to create templates such as daily planners, meeting notes, bug trackers, Kanban boards, and LaTeX blocks. Apply visual themes such as Pastel, Dark Glass, Terminal, and more.
+
+### Backup and restore
+
+Export the local SQLite database as a backup, or import an existing backup to restore your notes.
+
+### AI meeting summaries
+
+Record meeting audio, transcribe it, and generate AI-powered summaries and action items using OpenAI APIs.
+
+> AI features require an `OPENAI_API_KEY`.
+
+### Offline text-to-speech
+
+Use native Linux text-to-speech support to read note content aloud.
+
+### System tray integration
+
+Run Sticky quietly in the background and access quick actions, search, and restore options from the tray.
+
+### Recycle bin
+
+Deleted notes are soft-deleted first, so they can be restored before being permanently removed.
+
+### Global search
+
+Search across saved notes quickly using the global spotlight-style search.
+
+### Command palette
+
+Use the command palette to quickly add blocks, change colors, trigger actions, or create templates without relying on the mouse.
+
+---
+
+## Download
+
+Download the latest version from the [Releases](https://github.com/Mrudula-itsjuzme/Sticky/releases/latest) page.
+
+Release builds may include Linux and Windows assets depending on the version.
+
+> Sticky is a native desktop application. Do not use GitHub Packages, npm, or Docker to install it. Download the release asset for your platform.
+
+---
+
+## Getting Started
 
 ### Prerequisites
 
-- **Rust** toolchain (recommended via [rustup](https://rustup.rs/))
-- **GTK4** and **libadwaita** development libraries
-- **SQLite** development libraries
-- Linux native tools: `arecord` (for mic), `spd-say` (for TTS)
+You need the Rust toolchain and GTK-related development libraries.
 
-**Debian / Ubuntu:**
+Install Rust using [rustup](https://rustup.rs/).
+
+### Debian / Ubuntu
+
 ```bash
 sudo apt install libgtk-4-dev libadwaita-1-dev libsqlite3-dev speech-dispatcher alsa-utils
 ```
 
-**Fedora:**
+### Fedora
+
 ```bash
 sudo dnf install gtk4-devel libadwaita-devel sqlite-devel speech-dispatcher alsa-utils
 ```
 
-**Arch Linux:**
+### Arch Linux
+
 ```bash
 sudo pacman -S gtk4 libadwaita sqlite speech-dispatcher alsa-utils
 ```
 
 ---
 
-## 📦 Installation
+## Installation
 
-**STOP: Do NOT use GitHub Packages (npm, Docker, etc.) for this app!**
-This is a native desktop application. You must download and install the provided binaries (`.deb` for Linux, `.msi` for Windows) directly from the **GitHub Releases** page.
+### Linux — `.deb` package
 
-### 🐧 Linux (Debian / Ubuntu) — The Easy Way
-1. Go to the **Releases** page on the right side of this GitHub repository.
-2. Download the `sticky_X.X.X_amd64.deb` file.
-3. Double-click the file in your file manager to install it via your Software Center, OR run:
-   ```bash
-   sudo dpkg -i sticky_*.deb
-   ```
-4. Open your app launcher, search for **Sticky**, and launch it!
+Download the `.deb` file from the [latest release](https://github.com/Mrudula-itsjuzme/Sticky/releases/latest), then install it:
 
-*(To uninstall, simply run `sudo apt remove sticky`)*
-
-### 🪟 Windows — The Easy Way
-1. Go to the **Releases** page on the right side of this GitHub repository.
-2. Download the `sticky-X.X.X.msi` installer.
-3. Double-click it to run the installer wizard.
-4. You will now have a Sticky icon in your Start Menu and on your Desktop!
-
----
-
-## 🛠️ For Developers: How to build from source & publish releases
-
-If you want to compile this app yourself or upload a new release to GitHub, follow these exact steps:
-
-### 1. Building the `.deb` file on Linux
 ```bash
-# 1. Install cargo-deb (one-time setup)
+sudo dpkg -i sticky_*.deb
+sudo apt install -f
+```
+
+Uninstall:
+
+```bash
+sudo apt remove sticky
+```
+
+### Windows — `.msi` installer
+
+Download the `.msi` installer from the [latest release](https://github.com/Mrudula-itsjuzme/Sticky/releases/latest), then run the installer wizard.
+
+### Build from source
+
+Build the Debian package on Linux:
+
+```bash
 cargo install cargo-deb
-
-# 2. Build the package
 cargo deb
-
-# The resulting file will be exactly here:
-# target/debian/sticky_0.1.0-1_amd64.deb
 ```
 
-### 2. Building the `.msi` file on Windows
-*Requires [Rust](https://rustup.rs/) and [WiX Toolset v3](https://wixtoolset.org/) installed.*
+The generated package will be available at:
+
+```text
+target/debian/sticky_0.1.0-1_amd64.deb
+```
+
+Build the Windows installer:
+
 ```powershell
-# 1. Install cargo-wix (one-time setup)
 cargo install cargo-wix
-
-# 2. Build the installer
 cargo wix
-
-# The resulting file will be exactly here:
-# target\wix\sticky-0.1.0-x86_64.msi
 ```
 
-### 3. Publishing to GitHub Releases (For Maintainers)
-1. Go to your repository on GitHub.
-2. Click **Releases** on the right sidebar -> **Draft a new release**.
-3. Create a tag (e.g. `v0.1.0`).
-4. **CRITICAL STEP:** Drag and drop the built `.deb` and `.msi` files into the box at the bottom that says *"Attach binaries by dropping them here"*.
-5. Click **Publish**. Do **not** use GitHub Packages.
+The generated installer will be available at:
+
+```text
+target\wix\sticky-0.1.0-x86_64.msi
+```
 
 ---
 
-## 📖 How to Use
+## How to Use
 
-1. **Creating Notes**: Launch the app or use the System Tray icon to create a "New Note".
-2. **Adding Content**: Double-click anywhere inside the note window to add a text block.
-3. **Block Types**: Use the icons in the header bar or the Command Palette to add specific blocks:
-   - 📝 **Checklist** — Adds a to-do list block.
-   - 💻 **Code** — Adds a monospace code snippet block.
-   - ⏱️ **Timer** — Adds a Pomodoro focus timer.
-   - 📎 **Files** — Drag and drop any file into the window to attach it.
-4. **Organizing**: Drag blocks around by clicking and dragging them.
-5. **Whiteboard Mode**: Click the `[ ]` (Expand) button in the top right. The note will expand to fill the screen and switch to a dot-grid infinite canvas. Un-maximize to return to sticky note mode.
-6. **AI Summaries**:
-   - Export `OPENAI_API_KEY` in your environment.
-   - Click the microphone icon to start recording. Click again to stop. Wait a few seconds — an AI summary block will appear alongside automatically extracted actionable Checklists!
-7. **Connecting Blocks (Mind-Map)**: Click the 🔗 icon on a block, then click the 🔗 icon on another block. A beautiful curved arrow will connect them in the background!
-8. **Searching**: Press `Ctrl+Shift+F` (or use the tray menu) to search across all your saved notes.
-9. **Command Palette**: Press `Ctrl+K` on any note to open the quick-action palette.
-10. **Recycle Bin**: Trashed notes can be restored from the System Tray → "Restore Last Deleted". Use "Empty Trash" to permanently purge.
+1. Launch Sticky.
+2. Create a new note from the app or system tray.
+3. Double-click inside a note to add a block.
+4. Use the command palette to add checklists, code blocks, timers, templates, or themes.
+5. Expand a note into whiteboard mode for a larger visual workspace.
+6. Drag blocks around to organize ideas.
+7. Connect blocks using mind-map links.
+8. Use global search to find saved notes.
+9. Restore deleted notes from the recycle bin if needed.
 
 ---
 
-## ⌨️ Keyboard Shortcuts
+## AI Summaries
+
+Sticky can record meeting audio and generate summaries using OpenAI APIs.
+
+To enable AI features, set your API key:
+
+```bash
+export OPENAI_API_KEY="your_api_key_here"
+```
+
+Then use the microphone button in the app to start and stop recording.
+
+> Audio transcription and summaries depend on OpenAI API access. Do not use this feature for private or sensitive meetings unless you understand where your data is being sent.
+
+---
+
+## Keyboard Shortcuts
 
 | Shortcut | Action |
 |---|---|
-| `Ctrl+Shift+F` | Global Spotlight Search |
-| `Ctrl+K` | Command Palette |
+| `Ctrl+Shift+F` | Global search |
+| `Ctrl+K` | Command palette |
 | `Ctrl+B` | Bold selected text |
 | `Ctrl+I` | Italicize selected text |
 
 ---
 
-## 📂 Data Storage
+## Data Storage
 
-Everything is automatically saved to a local SQLite database:
-- **Linux**: `~/.local/share/sticky/notes.db`
-- **Windows**: `%APPDATA%\sticky\notes.db`
+Sticky stores notes locally in a SQLite database.
 
-Deleting a note sends it to the Recycle Bin. It can be permanently purged using the "Empty Trash" option in the System Tray.
+| Platform | Storage path |
+|---|---|
+| Linux | `~/.local/share/sticky/notes.db` |
+| Windows | `%APPDATA%\sticky\notes.db` |
+
+Deleted notes are moved to the recycle bin before permanent deletion.
 
 ---
 
-## 🛠 Architecture
+## Architecture
 
 | File | Purpose |
 |---|---|
-| `src/main.rs` | App bootstrap, system tray icon (`ksni`), global search, and DB init |
-| `src/db.rs` | SQLite data access layer for notes, blocks, and mind-map links |
-| `src/window.rs` | The sticky note window, header controls, and whiteboard toggles |
-| `src/canvas.rs` | Drag-and-drop canvas, infinite dot-grid, and bezier arrow rendering |
-| `src/text_block.rs` | Multi-purpose block widget (Text, Code, Timer, Files, Checklists) |
-| `src/portals.rs` | Flatpak/XDG portal integration for autostart and color picking |
-| `src/style.css` | GTK CSS for themes, ASMR animations, and layout |
+| `src/main.rs` | App startup, system tray, global search, and database initialization |
+| `src/db.rs` | SQLite data layer for notes, blocks, and links |
+| `src/window.rs` | Sticky note window, controls, whiteboard toggles, and AI flow |
+| `src/canvas.rs` | Canvas rendering, drag-and-drop behavior, and mind-map links |
+| `src/text_block.rs` | Text, checklist, code, timer, and file block widgets |
+| `src/portals.rs` | Flatpak/XDG portal integration |
+| `src/style.css` | GTK styling, animations, and layout |
 
 ---
 
-## 📦 Project Structure
+## Project Structure
 
-```
+```text
 Sticky/
 ├── src/
 │   ├── main.rs
@@ -196,19 +273,61 @@ Sticky/
 │   ├── portals.rs
 │   └── style.css
 ├── assets/
-│   └── sticky.desktop        # Linux desktop entry
+│   └── sticky.desktop
 ├── wix/
-│   └── main.wxs              # Windows .msi installer manifest
+│   └── main.wxs
 ├── docs/
-│   └── ROADMAP.md             # Feature roadmap & pending work
-├── install.sh                 # Linux quick-install script
-├── install.ps1                # Windows quick-install script
-├── Cargo.toml                 # Rust package config + deb metadata
+│   └── ROADMAP.md
+├── install.sh
+├── install.ps1
+├── Cargo.toml
 └── README.md
 ```
 
 ---
 
-## 🪪 License
+## Roadmap
+
+Planned improvements include:
+
+- Real screenshots and demo GIFs
+- More export options
+- Better search filters
+- More note templates
+- More theme presets
+- Improved Windows packaging
+- Local AI support
+- Semantic search
+
+See [`docs/ROADMAP.md`](docs/ROADMAP.md) for more details.
+
+---
+
+## Who is this for?
+
+Sticky is designed for:
+
+- Students organizing lectures, assignments, and study sessions
+- Developers saving snippets, tasks, and project notes
+- Writers mapping ideas visually
+- Productivity users who prefer local-first desktop tools
+- Anyone who wants sticky notes and a whiteboard in one app
+
+---
+
+## Tech Stack
+
+- Rust
+- GTK4
+- gtk-rs
+- SQLite
+- libadwaita
+- OpenAI APIs
+- WiX for Windows installer generation
+- cargo-deb for Debian package generation
+
+---
+
+## License
 
 MIT
