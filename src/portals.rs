@@ -64,7 +64,7 @@ pub fn install_autostart() {
          Type=Application\n\
          Name=Sticky Autostart\n\
          Comment=Auto-start Sticky on login\n\
-         Exec={}\n\
+         Exec={} --background\n\
          Icon=sticky\n\
          Hidden=false\n\
          NoDisplay=true\n\

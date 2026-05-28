@@ -11,6 +11,11 @@ use db::Db;
 use gtk::{gdk, gio};
 use once_cell::sync::Lazy;
 use std::sync::{mpsc, Arc, Mutex};
+use std::cell::RefCell;
+
+thread_local! {
+    pub static WINDOWS: RefCell<Vec<window::StickyWindow>> = RefCell::new(Vec::new());
+}
 
 pub static DB: Lazy<Mutex<Option<Arc<Db>>>> = Lazy::new(|| Mutex::new(None));
 pub static TOKIO_RT: Lazy<tokio::runtime::Runtime> =
@@ -33,6 +38,7 @@ fn main() -> glib::ExitCode {
 
     let app = adw::Application::builder()
         .application_id("com.mrudula.sticky")
+        .flags(gio::ApplicationFlags::HANDLES_COMMAND_LINE)
         .build();
 
     app.connect_startup(|app| {
@@ -177,31 +183,7 @@ fn main() -> glib::ExitCode {
         });
         app.add_action(&search_action);
         app.set_accels_for_action("app.search", &["<Control><Shift>f"]);
-    });
-
-    app.connect_activate(|app| {
-        println!("App activated");
-        if let Some(db_arc) = DB.lock().unwrap().as_ref().cloned() {
-            if let Ok(notes) = db_arc.get_notes() {
-                println!("Found {} notes in DB", notes.len());
-                if notes.is_empty() {
-                    println!("No notes found, creating a default one...");
-                    let _ = db_arc.create_note(100, 100, "#FFE66D");
-                }
-
-                for note in db_arc.get_notes().unwrap_or_default() {
-                    println!("Creating window for note ID: {}", note.id);
-                    let window = window::StickyWindow::new(app, note);
-                    window.present();
-                }
-            } else {
-                println!("Failed to get notes from DB");
-            }
-        } else {
-            println!("DB not initialized");
-        }
-
-        // --- System Tray Icon ---
+        
         // Use std mpsc: tray thread sends a &'static str command,
         // a glib timeout polls and re-dispatches on the GTK thread.
         let (tray_tx, tray_rx) = mpsc::channel::<&'static str>();
@@ -351,11 +333,82 @@ fn main() -> glib::ExitCode {
             }
             let service = ksni::TrayService::new(AntitgravTray { tx: tray_tx });
             service.spawn();
-            loop {
-                std::thread::sleep(std::time::Duration::from_secs(3600));
-            }
-        });
+    });
     });
 
-    app.run()
+    app.connect_command_line(|app, cmdline| {
+        println!("App command-line activated");
+        let args: Vec<String> = cmdline.arguments().into_iter().map(|s| s.to_string_lossy().into_owned()).collect();
+        let mut force_new = false;
+        let mut background = false;
+        let mut quit = false;
+        
+        for arg in args.iter().skip(1) {
+            match arg.as_str() {
+                "--new-note" => force_new = true,
+                "--background" => background = true,
+                "--quit" => quit = true,
+                _ => {}
+            }
+        }
+
+        if quit {
+            app.quit();
+            return 0;
+        }
+
+        let db_arc_opt = DB.lock().unwrap().as_ref().cloned();
+        if let Some(db_arc) = db_arc_opt {
+            if let Ok(notes) = db_arc.get_notes() {
+                println!("Found {} notes in DB", notes.len());
+                if notes.is_empty() && !background {
+                    println!("No notes found, creating a default one...");
+                    let _ = db_arc.create_note(100, 100, "#FFE66D");
+                }
+
+                let mut active_windows = Vec::new();
+                for note in db_arc.get_notes().unwrap_or_default() {
+                    println!("Creating window for note ID: {}", note.id);
+                    let window = window::StickyWindow::new(app, note.clone());
+                    println!("Calling present for note ID: {}", note.id);
+                    window.present();
+                    println!("Present complete for note ID: {}", note.id);
+                    active_windows.push(window);
+                }
+                
+                // Keep the windows alive by storing them in a static RefCell if needed, 
+                // but setting the application and presenting them should be enough in GTK4.
+                // Just in case, we store them in a static to perfectly satisfy the requirement.
+                WINDOWS.with(|w| {
+                    *w.borrow_mut() = active_windows;
+                });
+
+                if app.windows().is_empty() {
+                    println!("Fallback: No windows visible, creating a fresh one.");
+                    let note_id = db_arc.create_note(300, 200, "#FFE66D").unwrap_or(1);
+                    if let Ok(notes) = db_arc.get_notes() {
+                        if let Some(note) = notes.into_iter().find(|n| n.id == note_id) {
+                            let window = window::StickyWindow::new(app, note);
+                            window.present();
+                            WINDOWS.with(|w| {
+                                w.borrow_mut().push(window);
+                            });
+                        }
+                    }
+                }
+            } else {
+                println!("Failed to get notes from DB");
+            }
+        } else {
+            println!("DB not initialized");
+        }
+
+        // Force a new note creation if requested via CLI or if no windows visible and not running in background
+        if force_new || (app.windows().is_empty() && !background) {
+            portals::create_new_note(app);
+        }
+
+        0
+    });
+        app.run()
 }

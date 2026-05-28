@@ -7,3 +7,4 @@ Icon=sticky
 Terminal=false
 Categories=Utility;GTK;
 StartupNotify=true
+StartupWMClass=com.mrudula.sticky

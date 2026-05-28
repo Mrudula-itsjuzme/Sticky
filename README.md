@@ -352,3 +352,8 @@ Sticky is designed for:
 ## License
 
 MIT
+
+### Wayland & GTK4 Limitations
+Sticky is built with GTK4. In GTK4, setting window coordinates (`x`, `y`) or requesting a window to "skip taskbar" or "keep above" is strictly forbidden by modern Wayland protocols. Therefore:
+- Notes cannot be programmatically restored to exact pixel coordinates.
+- Skip taskbar / Keep above may not work depending on your compositor.

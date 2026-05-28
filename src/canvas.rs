@@ -52,6 +52,7 @@ impl Canvas {
     fn add_block(&self, data: TextBlock) {
         let block = TextBlockWidget::new(data.clone());
         self.put(&block, data.x, data.y);
+        self.imp().empty_label.set_visible(false);
     }
 
     pub fn remove_block(&self, block: &TextBlockWidget) {
@@ -108,6 +109,7 @@ mod imp {
         pub note_id: Cell<i64>,
         pub whiteboard_mode: Cell<bool>,
         pub linking_state: RefCell<Option<i64>>,
+        pub empty_label: gtk::Label,
     }
 
     #[glib::object_subclass]
@@ -121,6 +123,13 @@ mod imp {
         fn constructed(&self) {
             self.parent_constructed();
             let obj = self.obj();
+            
+            self.empty_label.set_label("Double-click to write...");
+            self.empty_label.add_css_class("sticky-empty-state");
+            self.empty_label.set_halign(gtk::Align::Center);
+            self.empty_label.set_valign(gtk::Align::Center);
+            obj.put(&self.empty_label, 16.0, 16.0);
+
 
             let click = gtk::GestureClick::new();
             obj.add_controller(click.clone());

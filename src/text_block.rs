@@ -35,6 +35,7 @@ mod imp {
 
     pub struct TextBlockWidget {
         pub data: RefCell<TextBlock>,
+        pub save_timer: RefCell<Option<glib::SourceId>>,
         pub stack: gtk::Stack,
         pub text_view: gtk::TextView,
         pub picture: gtk::Picture,
@@ -96,6 +97,7 @@ mod imp {
             stack.add_child(&code_view);
 
             Self {
+                save_timer: RefCell::new(None),
                 data: RefCell::new(TextBlock {
                     id: 0,
                     note_id: 0,
@@ -279,7 +281,17 @@ mod imp {
                         data.x += offset_x;
                         data.y += offset_y;
                     }
-                    obj.imp().save_data();
+                    let obj_clone = obj.clone();
+                    let mut timer = obj.imp().save_timer.borrow_mut();
+                    if let Some(t) = timer.take() {
+                        t.remove();
+                    }
+                    *timer = Some(glib::timeout_add_local_once(
+                        std::time::Duration::from_millis(500),
+                        move || {
+                            obj_clone.imp().save_data();
+                        }
+                    ));
                 }
             ));
 
@@ -288,7 +300,17 @@ mod imp {
                 #[weak]
                 obj,
                 move |_| {
-                    obj.imp().save_data();
+                    let obj_clone = obj.clone();
+                    let mut timer = obj.imp().save_timer.borrow_mut();
+                    if let Some(t) = timer.take() {
+                        t.remove();
+                    }
+                    *timer = Some(glib::timeout_add_local_once(
+                        std::time::Duration::from_millis(500),
+                        move || {
+                            obj_clone.imp().save_data();
+                        }
+                    ));
                 }
             ));
 
