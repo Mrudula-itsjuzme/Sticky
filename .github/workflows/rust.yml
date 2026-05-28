@@ -20,7 +20,7 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libgtk-4-dev libadwaita-1-dev libsqlite3-dev speech-dispatcher alsa-utils
+        sudo apt-get install -y libgtk-4-dev libadwaita-1-dev libsqlite3-dev speech-dispatcher alsa-utils libdbus-1-dev pkg-config
         
     - name: Set up Rust
       uses: dtolnay/rust-toolchain@stable
