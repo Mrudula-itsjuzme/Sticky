@@ -145,25 +145,22 @@ sudo pacman -S gtk4 libadwaita sqlite speech-dispatcher alsa-utils
 
 Download the latest release from the **[Releases Page](https://github.com/Mrudula-itsjuzme/Sticky/releases/latest)**.
 
-### Linux
+Each release includes separate downloads for each platform:
 
-The Linux release is a single zip file (`Sticky_vX.X.X_Linux.zip`) containing both installers:
+| File | Platform | How to install |
+|---|---|---|
+| `sticky_X.X.X_amd64.deb` | Debian / Ubuntu | Double-click or `sudo dpkg -i` |
+| `sticky.AppImage` | Any Linux distro | `chmod +x` and run — no install needed |
+| `sticky-X.X.X.msi` | Windows | Double-click the installer wizard |
 
-| File | What it is |
-|---|---|
-| `sticky_X.X.X_amd64.deb` | Debian/Ubuntu installer — double-click or `sudo dpkg -i` |
-| `sticky.AppImage` | Portable single-file app — `chmod +x` and run, no install needed |
-
-**Option A — Install via `.deb`:**
+### Linux — Install via `.deb`
 ```bash
-unzip Sticky_v0.1.0_Linux.zip
 sudo dpkg -i sticky_0.1.0-1_amd64.deb
 ```
 Launch **Sticky** from your application menu.
 
-**Option B — Run the `.AppImage` (no install):**
+### Linux — Run the `.AppImage` (portable, no install)
 ```bash
-unzip Sticky_v0.1.0_Linux.zip
 chmod +x sticky.AppImage
 ./sticky.AppImage
 ```
@@ -207,16 +204,7 @@ cargo appimage
 
 The generated AppImage will be at `target/appimage/sticky.AppImage`.
 
-### 3. Bundling the Linux release
-```bash
-zip -j target/Sticky_v0.1.0_Linux.zip \
-  target/debian/sticky_0.1.0-1_amd64.deb \
-  target/appimage/sticky.AppImage
-```
-
-Upload `Sticky_v0.1.0_Linux.zip` to GitHub Releases.
-
-### 4. Building the `.msi` file on Windows
+### 3. Building the `.msi` file on Windows
 
 > This step **must** be done on a Windows machine. Cross-compiling GTK4 apps for Windows from Linux is not supported.
 
