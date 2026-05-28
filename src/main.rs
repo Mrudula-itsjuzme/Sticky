@@ -39,7 +39,7 @@ fn main() -> glib::ExitCode {
         );
 
         // --- Autostart / background persistence ---
-        // 1. Write ~/.config/autostart/antigrav.desktop immediately (works everywhere).
+        // 1. Write ~/.config/autostart/sticky.desktop immediately (works everywhere).
         portals::install_autostart();
 
         // 2. Also request the XDG Background portal permission (Flatpak / portal-aware DEs).

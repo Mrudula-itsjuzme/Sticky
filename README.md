@@ -67,7 +67,7 @@ cargo run --release
 
 ## 📂 Data Storage
 
-Everything is automatically saved to a local SQLite database in your user data directory (e.g., `~/.local/share/antigrav/notes.db`). Deleting a note sends it to the Recycle Bin, and it can be permanently purged using the "Empty Trash" option in the System Tray.
+Everything is automatically saved to a local SQLite database in your user data directory (e.g., `~/.local/share/sticky/notes.db`). Deleting a note sends it to the Recycle Bin, and it can be permanently purged using the "Empty Trash" option in the System Tray.
 
 ## 🛠 Architecture
 
