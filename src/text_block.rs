@@ -290,7 +290,7 @@ mod imp {
                         std::time::Duration::from_millis(500),
                         move || {
                             obj_clone.imp().save_data();
-                        }
+                        },
                     ));
                 }
             ));
@@ -309,7 +309,7 @@ mod imp {
                         std::time::Duration::from_millis(500),
                         move || {
                             obj_clone.imp().save_data();
-                        }
+                        },
                     ));
                 }
             ));

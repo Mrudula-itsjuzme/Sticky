@@ -10,8 +10,8 @@ use adw::subclass::prelude::ObjectSubclassIsExt;
 use db::Db;
 use gtk::{gdk, gio};
 use once_cell::sync::Lazy;
-use std::sync::{mpsc, Arc, Mutex};
 use std::cell::RefCell;
+use std::sync::{mpsc, Arc, Mutex};
 
 thread_local! {
     pub static WINDOWS: RefCell<Vec<window::StickyWindow>> = RefCell::new(Vec::new());
@@ -183,7 +183,7 @@ fn main() -> glib::ExitCode {
         });
         app.add_action(&search_action);
         app.set_accels_for_action("app.search", &["<Control><Shift>f"]);
-        
+
         // Use std mpsc: tray thread sends a &'static str command,
         // a glib timeout polls and re-dispatches on the GTK thread.
         let (tray_tx, tray_rx) = mpsc::channel::<&'static str>();
@@ -333,16 +333,20 @@ fn main() -> glib::ExitCode {
             }
             let service = ksni::TrayService::new(AntitgravTray { tx: tray_tx });
             service.spawn();
-    });
+        });
     });
 
     app.connect_command_line(|app, cmdline| {
         println!("App command-line activated");
-        let args: Vec<String> = cmdline.arguments().into_iter().map(|s| s.to_string_lossy().into_owned()).collect();
+        let args: Vec<String> = cmdline
+            .arguments()
+            .into_iter()
+            .map(|s| s.to_string_lossy().into_owned())
+            .collect();
         let mut force_new = false;
         let mut background = false;
         let mut quit = false;
-        
+
         for arg in args.iter().skip(1) {
             match arg.as_str() {
                 "--new-note" => force_new = true,
@@ -375,8 +379,8 @@ fn main() -> glib::ExitCode {
                     println!("Present complete for note ID: {}", note.id);
                     active_windows.push(window);
                 }
-                
-                // Keep the windows alive by storing them in a static RefCell if needed, 
+
+                // Keep the windows alive by storing them in a static RefCell if needed,
                 // but setting the application and presenting them should be enough in GTK4.
                 // Just in case, we store them in a static to perfectly satisfy the requirement.
                 WINDOWS.with(|w| {
@@ -410,5 +414,5 @@ fn main() -> glib::ExitCode {
 
         0
     });
-        app.run()
+    app.run()
 }
