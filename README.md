@@ -143,30 +143,42 @@ sudo pacman -S gtk4 libadwaita sqlite speech-dispatcher alsa-utils
 
 ## Installation
 
-### Linux — `.deb` package
+Download the latest release from the **[Releases Page](https://github.com/Mrudula-itsjuzme/Sticky/releases/latest)**.
 
-Get the latest version of Sticky for your operating system from our **[Releases Page](https://github.com/mrudula-itsjuzme/Sticky/releases)**.
+### Linux
 
-1. Download the latest `sticky_X.X.X_amd64.deb` file.
-2. Double-click the downloaded file to install it via your Software Center, or install via terminal:
-   ```bash
-   sudo dpkg -i sticky_*.deb
-   ```
-3. Launch **Sticky** from your application menu!
+The Linux release is a single zip file (`Sticky_vX.X.X_Linux.zip`) containing both installers:
 
-### Linux — `.AppImage` package (Portable)
+| File | What it is |
+|---|---|
+| `sticky_X.X.X_amd64.deb` | Debian/Ubuntu installer — double-click or `sudo dpkg -i` |
+| `sticky.AppImage` | Portable single-file app — `chmod +x` and run, no install needed |
 
-1. Download the `Sticky-x86_64.AppImage` from the Releases page.
-2. Make it executable: `chmod +x Sticky-x86_64.AppImage`
-3. Run it!
-4. **Auto-Integration:** The first time you run the AppImage, it will automatically register itself in your Application Menu so you can easily launch it next time without touching the terminal!
+**Option A — Install via `.deb`:**
+```bash
+unzip Sticky_v0.1.0_Linux.zip
+sudo dpkg -i sticky_0.1.0-1_amd64.deb
+```
+Launch **Sticky** from your application menu.
 
-*(To uninstall, simply run `sudo apt remove sticky` or delete the AppImage)*
+**Option B — Run the `.AppImage` (no install):**
+```bash
+unzip Sticky_v0.1.0_Linux.zip
+chmod +x sticky.AppImage
+./sticky.AppImage
+```
+The first time you run the AppImage, it will automatically register itself in your Application Menu.
 
-### 🪟 Windows
-1. Download the latest `sticky-X.X.X.msi` installer.
-2. Double-click the installer to run the setup wizard.
-3. Launch **Sticky** from your Start Menu or Desktop shortcut!
+### Windows
+
+> **Note:** The Windows `.msi` installer must be built on a Windows machine. A pre-built `.msi` may not be available in every release.
+
+If a `sticky-X.X.X.msi` file is included in the release:
+1. Download and double-click the `.msi` installer.
+2. Follow the setup wizard.
+3. Launch **Sticky** from your Start Menu or Desktop shortcut.
+
+If no `.msi` is provided, see the [Building from Source](#for-developers-building-from-source) section below to compile on Windows.
 
 ---
 
@@ -193,16 +205,29 @@ cargo install cargo-appimage
 cargo appimage
 ```
 
-### 3. Building the `.msi` file on Windows
+The generated AppImage will be at `target/appimage/sticky.AppImage`.
 
-Build the Windows installer:
+### 3. Bundling the Linux release
+```bash
+zip -j target/Sticky_v0.1.0_Linux.zip \
+  target/debian/sticky_0.1.0-1_amd64.deb \
+  target/appimage/sticky.AppImage
+```
+
+Upload `Sticky_v0.1.0_Linux.zip` to GitHub Releases.
+
+### 4. Building the `.msi` file on Windows
+
+> This step **must** be done on a Windows machine. Cross-compiling GTK4 apps for Windows from Linux is not supported.
+
+**Prerequisites:** [Rust](https://rustup.rs/), [WiX Toolset v3](https://wixtoolset.org/), and GTK4 runtime libraries (via [gvsbuild](https://github.com/wingtk/gvsbuild) or [MSYS2](https://www.msys2.org/)).
 
 ```powershell
 cargo install cargo-wix
 cargo wix
 ```
 
-The generated installer will be available at:
+The generated installer will be at:
 
 ```text
 target\wix\sticky-0.1.0-x86_64.msi
