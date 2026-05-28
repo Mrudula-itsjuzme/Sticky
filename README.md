@@ -1,6 +1,6 @@
-# Sticky / Antigrav
+# Sticky
 
-Sticky (Antigrav) is a powerful, modern GTK4-based desktop note-taking and whiteboard application written in Rust. It goes beyond simple sticky notes by providing an infinite whiteboard mode, Pomodoro timers, code snippets, file attachments, and AI-powered meeting summaries. 
+Sticky is a powerful, modern GTK4-based desktop note-taking and whiteboard application written in Rust. It goes beyond simple sticky notes by providing an infinite whiteboard mode, Pomodoro timers, code snippets, file attachments, and AI-powered meeting summaries. 
 
 ## ✨ Features
 
