@@ -104,12 +104,12 @@ mod imp {
                     if let Some(content_box) = obj.content().and_downcast::<gtk::Box>() {
                         if let Some(canvas) = content_box.last_child().and_downcast::<Canvas>() {
                             let text = canvas.get_all_text();
-                            
+
                             let dialog = gtk::FileDialog::builder()
                                 .title("Export Note as Markdown")
                                 .initial_name("note_export.md")
                                 .build();
-                                
+
                             let window = obj.clone().upcast::<gtk::Window>();
                             dialog.save(Some(&window), gio::Cancellable::NONE, move |res| {
                                 if let Ok(file) = res {

@@ -23,6 +23,9 @@ Sticky is a powerful, modern GTK4-based desktop note-taking and whiteboard appli
   - **File Attachments**: Drag and drop any file (images, PDFs, documents) to create an attachment block. Click to open in your default app.
 - **Mind-Map Mode**: Click the link (🔗) button on one block and then another to draw beautiful, organic bezier curves between them on the whiteboard!
 - **WYSIWYG Markdown Editing**: Type standard markdown (like `**bold**` or `*italic*`) and watch it instantly render as clean, stylized text the moment you click away.
+- **Export Notes**: Instantly export any note's contents to a standard `.md` file with the native save dialog.
+- **Templates & Themes**: Use the Command Palette to spawn predefined templates (Daily Planner, Meeting Notes, Bug Tracker, Kanban, LaTeX) or apply gorgeous UI themes (Pastel, Dark Glass, Terminal, etc.).
+- **Data Portability (Backup & Restore)**: Built-in SQLite backup support. Export your entire database from the System Tray to a safe location, or import an existing backup to restore your notes.
 - **AI Integration**:
   - **Meeting Transcripts**: Click the microphone to record audio (uses `arecord`).
   - **Summaries**: Automatically transcribed and summarized using OpenAI's Whisper and GPT APIs.
