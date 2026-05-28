@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Sticky
+GenericName=Sticky Notes
+Comment=Modern floating sticky notes and infinite whiteboard
+Exec=sticky
+Icon=accessories-text-editor
+Terminal=false
+Categories=Utility;Office;
+Keywords=sticky;notes;whiteboard;todo;
+StartupWMClass=Sticky
+X-GNOME-Autostart-enabled=true

@@ -1,0 +1,123 @@
+<?xml version='1.0' encoding='windows-1252'?>
+<!--
+  Sticky Notes - Windows Installer (WiX v3)
+  Build with: cargo wix
+-->
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
+
+    <Product
+        Id='*'
+        Name='Sticky'
+        UpgradeCode='A1B2C3D4-E5F6-7890-ABCD-EF1234567890'
+        Manufacturer='Mrudula'
+        Language='1033'
+        Codepage='1252'
+        Version='0.1.0'>
+
+        <Package Id='*'
+            Keywords='Installer'
+            Description='Sticky Notes - Modern floating sticky notes and infinite whiteboard'
+            Manufacturer='Mrudula'
+            InstallerVersion='450'
+            Languages='1033'
+            Compressed='yes'
+            InstallScope='perUser'
+            SummaryCodepage='1252'
+            Platform='x64'/>
+
+        <MajorUpgrade
+            Schedule='afterInstallInitialize'
+            DowngradeErrorMessage='A newer version of [ProductName] is already installed. Setup will now exit.'/>
+
+        <Media Id='1' Cabinet='media1.cab' EmbedCab='yes' DiskPrompt='CD-ROM #1'/>
+        <Property Id='DiskPrompt' Value='Sticky Installation'/>
+
+        <Directory Id='TARGETDIR' Name='SourceDir'>
+            <Directory Id='LocalAppDataFolder' Name='AppData'>
+                <Directory Id='APPLICATIONFOLDER' Name='Sticky'>
+
+                    <Component Id='sticky_exe' Guid='*'>
+                        <File
+                            Id='exe0'
+                            Name='sticky.exe'
+                            DiskId='1'
+                            Source='target\release\sticky.exe'
+                            KeyPath='yes'/>
+                    </Component>
+
+                </Directory>
+            </Directory>
+
+            <Directory Id='ProgramMenuFolder'>
+                <Directory Id='ApplicationProgramsFolder' Name='Sticky'/>
+            </Directory>
+
+            <Directory Id='DesktopFolder' Name='Desktop'/>
+        </Directory>
+
+        <DirectoryRef Id='ApplicationProgramsFolder'>
+            <Component Id='ApplicationShortcut' Guid='B2C3D4E5-F6A7-8901-BCDE-F12345678901'>
+                <Shortcut Id='ApplicationStartMenuShortcut'
+                    Name='Sticky'
+                    Description='Modern floating sticky notes and infinite whiteboard'
+                    Target='[#exe0]'
+                    WorkingDirectory='APPLICATIONFOLDER'/>
+                <RemoveFolder Id='CleanUpShortCut' Directory='ApplicationProgramsFolder' On='uninstall'/>
+                <RegistryValue Root='HKCU' Key='Software\Mrudula\Sticky' Name='installed' Type='integer' Value='1' KeyPath='yes'/>
+            </Component>
+        </DirectoryRef>
+
+        <DirectoryRef Id='DesktopFolder'>
+            <Component Id='DesktopShortcut' Guid='C3D4E5F6-A7B8-9012-CDEF-123456789012'>
+                <Shortcut Id='DesktopShortcutLink'
+                    Name='Sticky'
+                    Description='Modern floating sticky notes and infinite whiteboard'
+                    Target='[#exe0]'
+                    WorkingDirectory='APPLICATIONFOLDER'/>
+                <RegistryValue Root='HKCU' Key='Software\Mrudula\Sticky' Name='desktop' Type='integer' Value='1' KeyPath='yes'/>
+            </Component>
+        </DirectoryRef>
+
+        <Feature
+            Id='Binaries'
+            Title='Application'
+            Description='Installs the Sticky application.'
+            Level='1'
+            ConfigurableDirectory='APPLICATIONFOLDER'
+            AllowAdvertise='no'
+            Display='expand'
+            Absent='disallow'>
+
+            <ComponentRef Id='sticky_exe'/>
+
+            <Feature
+                Id='StartMenu'
+                Title='Start Menu Shortcut'
+                Description='Add a shortcut to the Start Menu.'
+                Level='1'
+                Absent='allow'>
+                <ComponentRef Id='ApplicationShortcut'/>
+            </Feature>
+
+            <Feature
+                Id='Desktop'
+                Title='Desktop Shortcut'
+                Description='Add a shortcut to the Desktop.'
+                Level='1'
+                Absent='allow'>
+                <ComponentRef Id='DesktopShortcut'/>
+            </Feature>
+        </Feature>
+
+        <SetDirectory Id='WINDOWSVOLUME' Value='[WindowsVolume]'/>
+
+        <Property Id='WIXUI_INSTALLDIR' Value='APPLICATIONFOLDER'/>
+
+        <UI>
+            <UIRef Id='WixUI_InstallDir'/>
+            <Publish Dialog='WelcomeDlg' Control='Next' Event='NewDialog' Value='InstallDirDlg' Order='2'>1</Publish>
+            <Publish Dialog='InstallDirDlg' Control='Back' Event='NewDialog' Value='WelcomeDlg' Order='2'>1</Publish>
+        </UI>
+
+    </Product>
+</Wix>

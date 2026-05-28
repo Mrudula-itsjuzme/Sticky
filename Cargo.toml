@@ -2,6 +2,8 @@
 name = "sticky"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+description = "Modern floating sticky notes and infinite whiteboard for Linux"
 
 [dependencies]
 gtk = { package = "gtk4", version = "0.9", features = ["v4_10"] }
@@ -20,3 +22,15 @@ glib = { package = "glib", version = "0.20" }
 evalexpr = "13.1.0"
 reqwest = { version = "0.13.4", features = ["multipart", "json"] }
 ksni = "0.2"
+
+[package.metadata.deb]
+maintainer = "Mrudula <mrudula@example.com>"
+copyright = "2026 Mrudula"
+license-file = []
+depends = "$auto, libgtk-4-1, libadwaita-1-0, libsqlite3-0, speech-dispatcher, alsa-utils"
+section = "utility"
+priority = "optional"
+assets = [
+    ["target/release/sticky", "usr/bin/", "755"],
+    ["assets/sticky.desktop", "usr/share/applications/", "644"],
+]
